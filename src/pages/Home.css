@@ -1,0 +1,125 @@
+/* General Container Styling */
+.container {
+    margin-top: 20px;
+    font-family: 'Arial', sans-serif;
+    color: #f8f8f8; /* Light text for dark background */
+    background: linear-gradient(to bottom, rgba(0, 66, 37, 0.9), rgba(0, 104, 55, 0.9)), /* Dark gradient overlay */
+                url('../images/ANGC.jpg'); /* Background image path */
+    background-size: cover; /* Ensure the image covers the entire container */
+    background-position: center; /* Center the image */
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Add some depth */
+  }
+  
+  /* Header Styling */
+  h2 {
+    text-align: center;
+    font-weight: bold;
+    color: #f4c430; /* Yellow accent for main header */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Subtle glow */
+  }
+  
+  h4 {
+    color: #f8f8f8;
+    margin-top: 20px;
+    font-weight: bold;
+    border-bottom: 2px solid #f4c430; /* Yellow accent */
+    padding-bottom: 5px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4); /* Subtle glow */
+  }
+  
+  /* Leaderboard Table Styling */
+  .table {
+    background-color: rgba(0, 36, 20, 0.9); /* Semi-transparent dark green background */
+    border: 1px solid #f4c430; /* Yellow border */
+    border-radius: 8px;
+    overflow: hidden;
+    color: #f8f8f8; /* Light text for contrast */
+  }
+  
+  .table thead {
+    background-color: #f4c430; /* Yellow header */
+    color: #004225; /* Masters green text */
+    font-weight: bold;
+  }
+  
+  /* Table Row Styling */
+  .table tbody tr:nth-child(odd) {
+    background-color: rgba(0, 77, 37, 0.9); /* Semi-transparent alternating row */
+  }
+  
+  .table tbody tr:nth-child(even) {
+    background-color: rgba(0, 62, 28, 0.9); /* Slightly darker transparent row */
+  }
+  
+  .table tbody tr:hover {
+    background-color: rgba(0, 90, 48, 0.9); /* Highlighted green on hover */
+  }
+  
+  /* Card Styling */
+  .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #f4c430; /* Yellow border */
+    border-radius: 8px;
+    background-color: rgba(0, 66, 37, 0.9); /* Semi-transparent dark green */
+    color: #f8f8f8; /* Light text */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  .card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  .card-title {
+    text-align: center;
+    font-weight: bold;
+    color: #f4c430; /* Yellow accent for title */
+  }
+  
+  /* Selected Team Styling */
+  .bg-light {
+    background-color: rgba(0, 90, 48, 0.9) !important; /* Bright green for selected cards */
+    border: 2px solid #f4c430; /* Yellow border */
+  }
+  
+  /* List Styling for Golfers */
+  .list-group-item {
+    background-color: rgba(0, 66, 37, 0.9); /* Semi-transparent dark green for list items */
+    color: #f8f8f8;
+    border: 1px solid #f4c430; /* Yellow border */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+  }
+  
+  .list-group-item:hover {
+    background-color: rgba(0, 90, 48, 0.9);
+    color: #ffffff; /* Bright white text on hover */
+  }
+  
+  /* Highlighted Scores */
+  .badge {
+    font-size: 16px;
+    background-color: #f4c430; /* Yellow accent */
+    color: #004225; /* Masters green */
+    padding: 8px 12px;
+    border-radius: 12px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Glow effect */
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .card {
+      margin-bottom: 20px;
+    }
+  
+    .table {
+      font-size: 14px;
+    }
+  }
+  
+  

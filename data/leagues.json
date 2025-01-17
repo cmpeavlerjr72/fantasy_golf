@@ -1,0 +1,385 @@
+{
+  "leagues": {
+    "1": {
+      "teams": [
+        [
+          {
+            "golfer": "Scottie Scheffler",
+            "rank": "1",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Cameron Smith",
+            "rank": "6",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Justin Thomas",
+            "rank": "7",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Hideki Matsuyama",
+            "rank": "12",
+            "odds": "25/1"
+          },
+          {
+            "golfer": "Billy Horschel",
+            "rank": "13",
+            "odds": "100/1"
+          },
+          {
+            "golfer": "Tyrrell Hatton",
+            "rank": "18",
+            "odds": "50/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Jon Rahm",
+            "rank": "2",
+            "odds": "8/1"
+          },
+          {
+            "golfer": "Patrick Cantlay",
+            "rank": "5",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Dustin Johnson",
+            "rank": "8",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Sam Burns",
+            "rank": "11",
+            "odds": "40/1"
+          },
+          {
+            "golfer": "Bryson DeChambeau",
+            "rank": "14",
+            "odds": "20/1"
+          },
+          {
+            "golfer": "Jordan Spieth",
+            "rank": "17",
+            "odds": "12/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Collin Morikawa",
+            "rank": "3",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Viktor Hovland",
+            "rank": "4",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Rory McIlroy",
+            "rank": "9",
+            "odds": "14/1"
+          },
+          {
+            "golfer": "Xander Schauffele",
+            "rank": "10",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Louis Oosthuizen",
+            "rank": "15",
+            "odds": "40/1"
+          },
+          {
+            "golfer": "Abraham Ancer",
+            "rank": "16",
+            "odds": "65/1"
+          }
+        ]
+      ],
+      "teamNames": [
+        "Tillman",
+        "Mitchell",
+        "Matt"
+      ]
+    },
+    "2": {
+      "teams": [
+        [
+          {
+            "golfer": "Scottie Scheffler",
+            "rank": "1",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Viktor Hovland",
+            "rank": "4",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Patrick Cantlay",
+            "rank": "5",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Dustin Johnson",
+            "rank": "8",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Rory McIlroy",
+            "rank": "9",
+            "odds": "14/1"
+          },
+          {
+            "golfer": "Hideki Matsuyama",
+            "rank": "12",
+            "odds": "25/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Jon Rahm",
+            "rank": "2",
+            "odds": "8/1"
+          },
+          {
+            "golfer": "Collin Morikawa",
+            "rank": "3",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Cameron Smith",
+            "rank": "6",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Justin Thomas",
+            "rank": "7",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Xander Schauffele",
+            "rank": "10",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Sam Burns",
+            "rank": "11",
+            "odds": "40/1"
+          }
+        ]
+      ],
+      "teamNames": [
+        "Zach",
+        "Phil"
+      ]
+    },
+    "3": {
+      "teams": [
+        [
+          {
+            "golfer": "Scottie Scheffler",
+            "rank": "1",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Hideki Matsuyama",
+            "rank": "12",
+            "odds": "25/1"
+          },
+          {
+            "golfer": "Billy Horschel",
+            "rank": "13",
+            "odds": "100/1"
+          },
+          {
+            "golfer": "Matt Fitzpatrick",
+            "rank": "24",
+            "odds": "50/1"
+          },
+          {
+            "golfer": "Paul Casey",
+            "rank": "25",
+            "odds": "50/1"
+          },
+          {
+            "golfer": "Adam Scott",
+            "rank": "36",
+            "odds": "60/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Jon Rahm",
+            "rank": "2",
+            "odds": "8/1"
+          },
+          {
+            "golfer": "Sam Burns",
+            "rank": "11",
+            "odds": "40/1"
+          },
+          {
+            "golfer": "Bryson DeChambeau",
+            "rank": "14",
+            "odds": "20/1"
+          },
+          {
+            "golfer": "Tony Finau",
+            "rank": "23",
+            "odds": "35/1"
+          },
+          {
+            "golfer": "Sungjae Im",
+            "rank": "26",
+            "odds": "40/1"
+          },
+          {
+            "golfer": "Shane Lowry",
+            "rank": "35",
+            "odds": "60/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Collin Morikawa",
+            "rank": "3",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Xander Schauffele",
+            "rank": "10",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Louis Oosthuizen",
+            "rank": "15",
+            "odds": "40/1"
+          },
+          {
+            "golfer": "Daniel Berger",
+            "rank": "22",
+            "odds": "40/1"
+          },
+          {
+            "golfer": "Kevin Kisner",
+            "rank": "27",
+            "odds": "150/1"
+          },
+          {
+            "golfer": "Thomas Pieters",
+            "rank": "34",
+            "odds": "100/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Viktor Hovland",
+            "rank": "4",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Rory McIlroy",
+            "rank": "9",
+            "odds": "14/1"
+          },
+          {
+            "golfer": "Abraham Ancer",
+            "rank": "16",
+            "odds": "65/1"
+          },
+          {
+            "golfer": "Harris English",
+            "rank": "21",
+            "odds": "80/1"
+          },
+          {
+            "golfer": "Jason Kokrak",
+            "rank": "28",
+            "odds": "100/1"
+          },
+          {
+            "golfer": "Talor Gooch",
+            "rank": "33",
+            "odds": "100/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Patrick Cantlay",
+            "rank": "5",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Dustin Johnson",
+            "rank": "8",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Jordan Spieth",
+            "rank": "17",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Joaquin Niemann",
+            "rank": "20",
+            "odds": "45/1"
+          },
+          {
+            "golfer": "Will Zalatoris",
+            "rank": "29",
+            "odds": "35/1"
+          },
+          {
+            "golfer": "Corey Conners",
+            "rank": "32",
+            "odds": "65/1"
+          }
+        ],
+        [
+          {
+            "golfer": "Cameron Smith",
+            "rank": "6",
+            "odds": "16/1"
+          },
+          {
+            "golfer": "Justin Thomas",
+            "rank": "7",
+            "odds": "12/1"
+          },
+          {
+            "golfer": "Tyrrell Hatton",
+            "rank": "18",
+            "odds": "50/1"
+          },
+          {
+            "golfer": "Brooks Koepka",
+            "rank": "19",
+            "odds": "18/1"
+          },
+          {
+            "golfer": "Kevin Na",
+            "rank": "30",
+            "odds": "100/1"
+          },
+          {
+            "golfer": "Patrick Reed",
+            "rank": "31",
+            "odds": "35/1"
+          }
+        ]
+      ],
+      "teamNames": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    }
+  }
+}
