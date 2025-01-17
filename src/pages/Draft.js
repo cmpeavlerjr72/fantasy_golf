@@ -17,7 +17,7 @@ const Draft = () => {
       setLeagueId(selectedLeague);
 
       // Fetch players from player_data.json
-      fetch('/player_data.json')
+      fetch(`${process.env.PUBLIC_URL}/player_data.json`)
         .then((response) => response.json())
         .then((data) => {
           setPlayers(data.all.map((player) => ({

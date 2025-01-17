@@ -14,7 +14,7 @@ const Scoreboard = () => {
     const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
     // Fetch leaderboard data
-    fetch('/leaderboard.json')
+    fetch(`${process.env.PUBLIC_URL}/leaderboard.json`)
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
