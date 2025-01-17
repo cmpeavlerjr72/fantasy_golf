@@ -1,17 +1,17 @@
 {
   "files": {
     "main.css": "/fantasy_golf/static/css/main.db16f0cb.css",
-    "main.js": "/fantasy_golf/static/js/main.c7f99028.js",
+    "main.js": "/fantasy_golf/static/js/main.9ea9ab58.js",
     "static/js/488.005c8283.chunk.js": "/fantasy_golf/static/js/488.005c8283.chunk.js",
     "static/media/amen_corner.jpg": "/fantasy_golf/static/media/amen_corner.0dba4c66d407b591156d.jpg",
     "static/media/ANGC.jpg": "/fantasy_golf/static/media/ANGC.7f9f22bfbe9bfbd5e486.jpg",
     "index.html": "/fantasy_golf/index.html",
     "main.db16f0cb.css.map": "/fantasy_golf/static/css/main.db16f0cb.css.map",
-    "main.c7f99028.js.map": "/fantasy_golf/static/js/main.c7f99028.js.map",
+    "main.9ea9ab58.js.map": "/fantasy_golf/static/js/main.9ea9ab58.js.map",
     "488.005c8283.chunk.js.map": "/fantasy_golf/static/js/488.005c8283.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.db16f0cb.css",
-    "static/js/main.c7f99028.js"
+    "static/js/main.9ea9ab58.js"
   ]
 }
