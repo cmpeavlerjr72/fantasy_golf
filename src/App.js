@@ -11,9 +11,16 @@ const App = () => {
     <Router>
       <Navbar />
       <Routes>
+        {/* League Selector Page (Default) */}
         <Route path="/" element={<LeagueSelector />} />
+
+        {/* Home Page */}
         <Route path="/home" element={<Home />} />
+
+        {/* Draft Page */}
         <Route path="/draft" element={<Draft />} />
+
+        {/* Scoreboard Page */}
         <Route path="/scoreboard" element={<Scoreboard />} />
       </Routes>
     </Router>
@@ -21,6 +28,7 @@ const App = () => {
 };
 
 export default App;
+
 
 
 

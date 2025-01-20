@@ -9,42 +9,45 @@ const PORT = 5000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Path to the JSON file
+// Paths to JSON files
 const DB_FILE = './data/leagues.json';
+const TOURNAMENT_STATS_FILE = './data/live_tournament_stats.json';
+const FIELD_FILE = './data/field.json';
+const RANKINGS_FILE = './data/rankings.json';
 
-// Utility to read the JSON file
-const readDatabase = () => {
+// Utility to read a JSON file
+const readJsonFile = (filePath, defaultValue = {}) => {
   try {
-    if (!fs.existsSync(DB_FILE)) {
-      fs.writeFileSync(DB_FILE, JSON.stringify({ leagues: {} }, null, 2));
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, JSON.stringify(defaultValue, null, 2));
     }
-    const data = fs.readFileSync(DB_FILE, 'utf-8');
+    const data = fs.readFileSync(filePath, 'utf-8');
     return JSON.parse(data);
   } catch (error) {
-    console.error('Error reading database:', error.message);
-    return { leagues: {} };
+    console.error(`Error reading ${filePath}:`, error.message);
+    return defaultValue;
   }
 };
 
-// Utility to write to the JSON file
-const writeDatabase = (data) => {
+// Utility to write to a JSON file
+const writeJsonFile = (filePath, data) => {
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-    console.log('Database updated successfully.');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
+    console.log(`${filePath} updated successfully.`);
   } catch (error) {
-    console.error('Error writing to database:', error.message);
+    console.error(`Error writing to ${filePath}:`, error.message);
   }
 };
 
 // API: Get all leagues
 app.get('/leagues', (req, res) => {
-  const data = readDatabase();
+  const data = readJsonFile(DB_FILE, { leagues: {} });
   res.json(data.leagues);
 });
 
 // API: Get a specific league by ID
 app.get('/leagues/:id', (req, res) => {
-  const data = readDatabase();
+  const data = readJsonFile(DB_FILE, { leagues: {} });
   const league = data.leagues[req.params.id];
   if (!league) {
     console.error(`League with ID ${req.params.id} not found.`);
@@ -56,7 +59,7 @@ app.get('/leagues/:id', (req, res) => {
 // API: Create a new league
 app.post('/leagues', (req, res) => {
   try {
-    const data = readDatabase();
+    const data = readJsonFile(DB_FILE, { leagues: {} });
     const { teams, teamNames } = req.body;
 
     // Determine the next league ID
@@ -65,7 +68,7 @@ app.post('/leagues', (req, res) => {
 
     // Save the new league
     data.leagues[nextId] = { teams, teamNames };
-    writeDatabase(data);
+    writeJsonFile(DB_FILE, data);
 
     console.log(`New league created with ID: ${nextId}`);
     res.status(201).json({ leagueId: nextId });
@@ -78,7 +81,7 @@ app.post('/leagues', (req, res) => {
 // API: Update an existing league
 app.put('/leagues/:id', (req, res) => {
   try {
-    const data = readDatabase();
+    const data = readJsonFile(DB_FILE, { leagues: {} });
     const league = data.leagues[req.params.id];
     if (!league) {
       console.error(`League with ID ${req.params.id} not found.`);
@@ -87,7 +90,7 @@ app.put('/leagues/:id', (req, res) => {
 
     // Update league data
     data.leagues[req.params.id] = { ...league, ...req.body };
-    writeDatabase(data);
+    writeJsonFile(DB_FILE, data);
 
     console.log(`League with ID ${req.params.id} updated.`);
     res.json(data.leagues[req.params.id]);
@@ -97,8 +100,42 @@ app.put('/leagues/:id', (req, res) => {
   }
 });
 
+// API: Get live tournament stats
+app.get('/tournament-stats', (req, res) => {
+  try {
+    const data = readJsonFile(TOURNAMENT_STATS_FILE);
+    res.json(data);
+  } catch (error) {
+    console.error('Error reading tournament stats:', error.message);
+    res.status(500).json({ error: 'Failed to retrieve tournament stats' });
+  }
+});
+
+// API: Get field data
+app.get('/field', (req, res) => {
+  try {
+    const data = readJsonFile(FIELD_FILE);
+    res.json(data);
+  } catch (error) {
+    console.error('Error reading field data:', error.message);
+    res.status(500).json({ error: 'Failed to retrieve field data' });
+  }
+});
+
+// API: Get rankings data
+app.get('/rankings', (req, res) => {
+  try {
+    const data = readJsonFile(RANKINGS_FILE);
+    res.json(data);
+  } catch (error) {
+    console.error('Error reading rankings data:', error.message);
+    res.status(500).json({ error: 'Failed to retrieve rankings data' });
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
 

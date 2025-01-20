@@ -2,53 +2,53 @@ import React, { useState, useEffect } from 'react';
 import './Scoreboard.css'; // Import the CSS file for styling
 
 const Scoreboard = () => {
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [teams, setTeams] = useState({});
-  const [teamColors, setTeamColors] = useState({});
-  const [teamNames, setTeamNames] = useState([]);
-  const [leagueId, setLeagueId] = useState('');
+  const [leaderboard, setLeaderboard] = useState([]); // Player data
+  const [error, setError] = useState(null); // Error handling
+  const [loading, setLoading] = useState(true); // Loading state
+  const [teams, setTeams] = useState({}); // Player-to-team mapping
+  const [teamColors, setTeamColors] = useState({}); // Team colors
+  const [teamNames, setTeamNames] = useState([]); // Team names
+  const [leagueId, setLeagueId] = useState(''); // Current league ID
 
   useEffect(() => {
     const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
-    // Fetch leaderboard data
-    fetch(`${process.env.PUBLIC_URL}/leaderboard.json`)
+    // Fetch leaderboard data from the server
+    fetch('http://localhost:5000/tournament-stats')
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
       })
       .then((data) => {
-        if (!data.data || !Array.isArray(data.data.player)) {
-          throw new Error('Invalid data structure: `data.player` is missing or not an array.');
+        console.log('Fetched leaderboard data:', data); // Debugging
+        if (!data.live_stats || !Array.isArray(data.live_stats)) {
+          throw new Error('Invalid data structure: `live_stats` is missing or not an array.');
         }
 
-        const players = data.data.player.map((player) => ({
-          id: player.id,
-          name: `${player.first_name} ${player.last_name}`,
-          normalizedName: normalizeName(`${player.first_name} ${player.last_name}`),
-          position: player.pos || '-',
-          scoreToPar: player.topar || '-',
-          movement: player.movement || '-',
-          country: player.countryName || '-',
+        const players = data.live_stats.map((player) => ({
+          id: player.dg_id,
+          name: player.player_name,
+          normalizedName: normalizeName(player.player_name),
+          position: player.position || '-',
+          scoreToPar: player.total || '-',
         }));
         setLeaderboard(players);
       })
       .catch((error) => setError(error.message))
       .finally(() => setLoading(false));
 
-    // Fetch league data
+    // Fetch league data from the server
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (selectedLeague) {
       setLeagueId(selectedLeague);
       fetch(`http://localhost:5000/leagues/${selectedLeague}`)
         .then((response) => response.json())
         .then((data) => {
+          console.log('Fetched league data:', data); // Debugging
           const playerToTeamMap = {};
           data.teams.forEach((team, teamIndex) => {
             team.forEach((player) => {
-              const normalizedPlayerName = normalizeName(player.golfer);
+              const normalizedPlayerName = normalizeName(player.name);
               playerToTeamMap[normalizedPlayerName] = data.teamNames[teamIndex];
             });
           });
@@ -78,8 +78,6 @@ const Scoreboard = () => {
               <th>Position</th>
               <th>Player</th>
               <th>Score to Par</th>
-              <th>Movement</th>
-              <th>Country</th>
               <th>Team</th>
             </tr>
           </thead>
@@ -92,8 +90,6 @@ const Scoreboard = () => {
                   <td>{player.position}</td>
                   <td>{player.name}</td>
                   <td>{player.scoreToPar}</td>
-                  <td>{player.movement > 0 ? `+${player.movement}` : player.movement}</td>
-                  <td>{player.country}</td>
                   <td>{teamName || '-'}</td>
                 </tr>
               );
@@ -108,6 +104,7 @@ const Scoreboard = () => {
 };
 
 export default Scoreboard;
+
 
 
 

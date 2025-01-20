@@ -380,6 +380,252 @@
         "E",
         "F"
       ]
+    },
+    "4": {
+      "teams": [
+        [
+          {
+            "id": 23604,
+            "name": "Clark, Wyndham",
+            "owgr_rank": 7,
+            "dg_rank": 30
+          },
+          {
+            "id": 17488,
+            "name": "Im, Sungjae",
+            "owgr_rank": 19,
+            "dg_rank": 8
+          },
+          {
+            "id": 19483,
+            "name": "Burns, Sam",
+            "owgr_rank": 20,
+            "dg_rank": 13
+          },
+          {
+            "id": 11676,
+            "name": "Finau, Tony",
+            "owgr_rank": 24,
+            "dg_rank": 20
+          },
+          {
+            "id": 8825,
+            "name": "Harman, Brian",
+            "owgr_rank": 28,
+            "dg_rank": 64
+          },
+          {
+            "id": 21554,
+            "name": "Poston, J.T.",
+            "owgr_rank": 35,
+            "dg_rank": 45
+          }
+        ],
+        [
+          {
+            "id": 15466,
+            "name": "Cantlay, Patrick",
+            "owgr_rank": 12,
+            "dg_rank": 12
+          },
+          {
+            "id": 11276,
+            "name": "Horschel, Billy",
+            "owgr_rank": 16,
+            "dg_rank": 72
+          },
+          {
+            "id": 14139,
+            "name": "Thomas, Justin",
+            "owgr_rank": 21,
+            "dg_rank": 11
+          },
+          {
+            "id": 24766,
+            "name": "Kim, Tom",
+            "owgr_rank": 23,
+            "dg_rank": 26
+          },
+          {
+            "id": 13126,
+            "name": "Taylor, Nick",
+            "owgr_rank": 29,
+            "dg_rank": 139
+          },
+          {
+            "id": 28270,
+            "name": "Dunlap, Nick",
+            "owgr_rank": 32,
+            "dg_rank": 109
+          }
+        ]
+      ],
+      "teamNames": [
+        "Tillman",
+        "Mitchell"
+      ]
+    },
+    "5": {
+      "teams": [
+        [
+          {
+            "id": 23604,
+            "name": "Clark, Wyndham",
+            "owgr_rank": 7,
+            "dg_rank": 30
+          },
+          {
+            "id": 11676,
+            "name": "Finau, Tony",
+            "owgr_rank": 24,
+            "dg_rank": 20
+          },
+          {
+            "id": 8825,
+            "name": "Harman, Brian",
+            "owgr_rank": 28,
+            "dg_rank": 64
+          },
+          {
+            "id": 22833,
+            "name": "Echavarria, Nicolas",
+            "owgr_rank": 41,
+            "dg_rank": 61
+          },
+          {
+            "id": 27364,
+            "name": "Thompson, Davis",
+            "owgr_rank": 46,
+            "dg_rank": 40
+          },
+          {
+            "id": 15556,
+            "name": "Hughes, Mackenzie",
+            "owgr_rank": 59,
+            "dg_rank": 62
+          }
+        ],
+        [
+          {
+            "id": 15466,
+            "name": "Cantlay, Patrick",
+            "owgr_rank": 12,
+            "dg_rank": 12
+          },
+          {
+            "id": 24766,
+            "name": "Kim, Tom",
+            "owgr_rank": 23,
+            "dg_rank": 26
+          },
+          {
+            "id": 13126,
+            "name": "Taylor, Nick",
+            "owgr_rank": 29,
+            "dg_rank": 139
+          },
+          {
+            "id": 23465,
+            "name": "Greyserman, Max",
+            "owgr_rank": 39,
+            "dg_rank": 21
+          },
+          {
+            "id": 9771,
+            "name": "Day, Jason",
+            "owgr_rank": 47,
+            "dg_rank": 54
+          },
+          {
+            "id": 18103,
+            "name": "Bezuidenhout, Christiaan",
+            "owgr_rank": 57,
+            "dg_rank": 48
+          }
+        ],
+        [
+          {
+            "id": 11276,
+            "name": "Horschel, Billy",
+            "owgr_rank": 16,
+            "dg_rank": 72
+          },
+          {
+            "id": 14139,
+            "name": "Thomas, Justin",
+            "owgr_rank": 21,
+            "dg_rank": 11
+          },
+          {
+            "id": 28270,
+            "name": "Dunlap, Nick",
+            "owgr_rank": 32,
+            "dg_rank": 109
+          },
+          {
+            "id": 26651,
+            "name": "Young, Cameron",
+            "owgr_rank": 37,
+            "dg_rank": 44
+          },
+          {
+            "id": 28635,
+            "name": "McCarty, Matt",
+            "owgr_rank": 50,
+            "dg_rank": 130
+          },
+          {
+            "id": 7399,
+            "name": "Glover, Lucas",
+            "owgr_rank": 54,
+            "dg_rank": 56
+          }
+        ],
+        [
+          {
+            "id": 17488,
+            "name": "Im, Sungjae",
+            "owgr_rank": 19,
+            "dg_rank": 8
+          },
+          {
+            "id": 19483,
+            "name": "Burns, Sam",
+            "owgr_rank": 20,
+            "dg_rank": 13
+          },
+          {
+            "id": 21554,
+            "name": "Poston, J.T.",
+            "owgr_rank": 35,
+            "dg_rank": 45
+          },
+          {
+            "id": 17511,
+            "name": "Straka, Sepp",
+            "owgr_rank": 36,
+            "dg_rank": 50
+          },
+          {
+            "id": 21756,
+            "name": "Cole, Eric",
+            "owgr_rank": 51,
+            "dg_rank": 51
+          },
+          {
+            "id": 17786,
+            "name": "Davis, Cameron",
+            "owgr_rank": 52,
+            "dg_rank": 112
+          }
+        ]
+      ],
+      "teamNames": [
+        "Matt",
+        "Ryan",
+        "Till",
+        "Mitchell"
+      ]
     }
   }
 }

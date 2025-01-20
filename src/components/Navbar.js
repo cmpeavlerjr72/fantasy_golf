@@ -28,6 +28,9 @@ const Navbar = () => {
             <li className="nav-item">
               <Link className="nav-link" to="/scoreboard">Scoreboard</Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link" to="/LeagueSelector">LeagueSelector</Link>
+            </li>
           </ul>
         </div>
       </div>

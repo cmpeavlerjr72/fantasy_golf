@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './Home.css'; // Import the CSS file for styling
 
-
 const Home = () => {
   const [teams, setTeams] = useState([]);
   const [teamNames, setTeamNames] = useState([]);
   const [leagueId, setLeagueId] = useState('');
   const [leaderboard, setLeaderboard] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
+
+  // Helper function to normalize names for consistent comparison
+  const normalizeName = (name) => name?.toLowerCase().trim();
 
   useEffect(() => {
     const selectedLeague = localStorage.getItem('selectedLeague');
@@ -23,19 +25,19 @@ const Home = () => {
         })
         .catch((error) => console.error('Error fetching league data:', error));
 
-      // Fetch leaderboard data
-      fetch('/leaderboard.json')
+      // Fetch live tournament stats
+      fetch('http://localhost:5000/tournament-stats')
         .then((response) => response.json())
         .then((data) => {
-          if (data.data && Array.isArray(data.data.player)) {
-            const normalizedLeaderboard = data.data.player.map((player) => ({
-              name: `${player.first_name} ${player.last_name}`,
-              scoreToPar: parseFloat(player.topar) || 0,
+          if (data.live_stats && Array.isArray(data.live_stats)) {
+            const normalizedLeaderboard = data.live_stats.map((player) => ({
+              name: normalizeName(player.player_name),
+              scoreToPar: parseFloat(player.total) || 0, // Use `total` as score-to-par
             }));
             setLeaderboard(normalizedLeaderboard);
           }
         })
-        .catch((error) => console.error('Error fetching leaderboard data:', error));
+        .catch((error) => console.error('Error fetching live tournament stats:', error));
     }
   }, []);
 
@@ -45,8 +47,10 @@ const Home = () => {
       const team = teams[index];
       const teamScore = team
         .map((player) => {
-          const golfer = leaderboard.find((entry) => entry.name === player.golfer);
-          return golfer ? golfer.scoreToPar : null;
+          const name = leaderboard.find(
+            (entry) => normalizeName(entry.name) === normalizeName(player.name)
+          );
+          return name ? name.scoreToPar : null;
         })
         .filter((score) => score !== null) // Exclude players without scores
         .reduce((total, score) => total + score, 0); // Sum the scores
@@ -105,10 +109,15 @@ const Home = () => {
               <div className="mt-2">
                 <ul className="list-group">
                   {team.map((player, playerIndex) => {
-                    const golfer = leaderboard.find((entry) => entry.name === player.golfer);
+                    const name = leaderboard.find(
+                      (entry) => normalizeName(entry.name) === normalizeName(player.name)
+                    );
+                    if (!name) {
+                      console.warn(`No match found for player: ${player.golfer}`);
+                    }
                     return (
                       <li key={playerIndex} className="list-group-item">
-                        {player.golfer} - Score: {golfer ? golfer.scoreToPar : 'N/A'}
+                        {player.name} - Score: {name ? name.scoreToPar : 'N/A'}
                       </li>
                     );
                   })}
@@ -123,6 +132,9 @@ const Home = () => {
 };
 
 export default Home;
+
+
+
 
 
 
