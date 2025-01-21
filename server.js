@@ -14,6 +14,7 @@ const DB_FILE = './data/leagues.json';
 const TOURNAMENT_STATS_FILE = './data/live_tournament_stats.json';
 const FIELD_FILE = './data/field.json';
 const RANKINGS_FILE = './data/rankings.json';
+const HOLES_FILE = './data/holes.json';
 
 // Utility to read a JSON file
 const readJsonFile = (filePath, defaultValue = {}) => {
@@ -126,6 +127,17 @@ app.get('/field', (req, res) => {
 app.get('/rankings', (req, res) => {
   try {
     const data = readJsonFile(RANKINGS_FILE);
+    res.json(data);
+  } catch (error) {
+    console.error('Error reading rankings data:', error.message);
+    res.status(500).json({ error: 'Failed to retrieve rankings data' });
+  }
+});
+
+// API: Get rankings data
+app.get('/holes', (req, res) => {
+  try {
+    const data = readJsonFile(HOLES_FILE);
     res.json(data);
   } catch (error) {
     console.error('Error reading rankings data:', error.message);

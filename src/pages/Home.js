@@ -7,6 +7,7 @@ const Home = () => {
   const [leagueId, setLeagueId] = useState('');
   const [leaderboard, setLeaderboard] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
 
   // Helper function to normalize names for consistent comparison
   const normalizeName = (name) => name?.toLowerCase().trim();
@@ -32,7 +33,7 @@ const Home = () => {
           if (data.live_stats && Array.isArray(data.live_stats)) {
             const normalizedLeaderboard = data.live_stats.map((player) => ({
               name: normalizeName(player.player_name),
-              scoreToPar: parseFloat(player.total) || 0, // Use `total` as score-to-par
+              scoreToPar: parseFloat(player.total) || 0,
             }));
             setLeaderboard(normalizedLeaderboard);
           }
@@ -40,6 +41,19 @@ const Home = () => {
         .catch((error) => console.error('Error fetching live tournament stats:', error));
     }
   }, []);
+
+  // Fetch scorecard data when a player is selected
+  const fetchScorecardData = (playerName) => {
+    fetch('http://localhost:5000/holes')
+      .then((response) => response.json())
+      .then((data) => {
+        const playerData = data.players.find(
+          (player) => normalizeName(player.player_name) === normalizeName(playerName)
+        );
+        setSelectedPlayer(playerData || null);
+      })
+      .catch((error) => console.error('Error fetching scorecard data:', error));
+  };
 
   // Calculate the total score for each team
   const calculateTeamScores = () => {
@@ -61,6 +75,49 @@ const Home = () => {
   // Handle team card click
   const handleCardClick = (teamIndex) => {
     setSelectedTeam(selectedTeam === teamIndex ? null : teamIndex);
+  };
+
+  // Handle player click to fetch scorecard data
+  const handlePlayerClick = (playerName) => {
+    fetchScorecardData(playerName);
+  };
+
+  // Get styles for scores based on comparison with par
+  const getScoreStyle = (score, par) => {
+    const styles = {
+      display: 'inline-block', // Ensures styling only wraps the score
+      width: '24px',
+      height: '24px',
+      lineHeight: '24px', // Aligns text vertically
+      textAlign: 'center',
+      fontWeight: 'bold',
+      // backgroundColor: '#ADD8E6', // Light blue background for consistency
+      borderRadius: '0', // Default (no rounded edges)
+    };
+  
+    if (score < par) {
+      styles.color = 'red'; // Text color for scores under par
+      if (score === par - 1) {
+        styles.border = '2px solid black'; // Black outline for birdie
+        styles.borderRadius = '50%'; // Circle for birdie
+      } else if (score < par - 1) {
+        styles.backgroundColor = 'white'; // Filled white circle for eagle or better
+        styles.borderRadius = '50%';
+      }
+    } else if (score > par) {
+      styles.color = 'green'; // Text color for scores over par
+      if (score === par + 1) {
+        styles.border = '2px solid black'; // Black outline for bogey
+        styles.borderRadius = '0'; // Square for bogey
+      } else if (score > par + 1) {
+        styles.backgroundColor = 'white'; // Filled white square for double bogey or worse
+        styles.borderRadius = '0';
+      }
+    } else if (score === par) {
+      styles.color = 'green'; // Text color for par
+    }
+  
+    return styles;
   };
 
   const sortedScores = calculateTeamScores().sort((a, b) => a.score - b.score);
@@ -108,30 +165,73 @@ const Home = () => {
             {selectedTeam === index && (
               <div className="mt-2">
                 <ul className="list-group">
-                  {team.map((player, playerIndex) => {
-                    const name = leaderboard.find(
-                      (entry) => normalizeName(entry.name) === normalizeName(player.name)
-                    );
-                    if (!name) {
-                      console.warn(`No match found for player: ${player.golfer}`);
-                    }
-                    return (
-                      <li key={playerIndex} className="list-group-item">
-                        {player.name} - Score: {name ? name.scoreToPar : 'N/A'}
-                      </li>
-                    );
-                  })}
+                  {team.map((player, playerIndex) => (
+                    <li
+                      key={playerIndex}
+                      className="list-group-item"
+                      onClick={() => handlePlayerClick(player.name)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      {player.name}
+                    </li>
+                  ))}
                 </ul>
               </div>
             )}
           </div>
         ))}
       </div>
+
+      {/* Scorecard */}
+      {selectedPlayer && (
+        <div className="mt-4">
+          <h4>Scorecard for {selectedPlayer.player_name}</h4>
+          <table className="table table-bordered table-striped scorecard">
+            <thead>
+              <tr>
+                <th>Round</th>
+                {Array.from({ length: 18 }, (_, i) => (
+                  <th key={i + 1}>Hole {i + 1}</th>
+                ))}
+                <th>OUT</th>
+                <th>IN</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(selectedPlayer.rounds || []).map((round, roundIndex) => {
+                const outScore = round.scores.slice(0, 9).reduce((sum, hole) => sum + hole.score, 0);
+                const inScore = round.scores.slice(9).reduce((sum, hole) => sum + hole.score, 0);
+                const totalScore = outScore + inScore;
+
+                return (
+                  <tr key={roundIndex}>
+                    <td>Round {round.round_num}</td>
+                    {round.scores.map((hole, holeIndex) => (
+                      <td key={`hole-${holeIndex}`}>
+                        <span style={getScoreStyle(hole.score, hole.par)}>{hole.score}</span>
+                      </td>
+                    ))}
+                    <td>{outScore}</td>
+                    <td>{inScore}</td>
+                    <td>{totalScore}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Home;
+
+
+
+
+
 
 
 
