@@ -1,0 +1,95 @@
+/* Container Styling */
+.masters-scoreboard {
+    background: linear-gradient(to bottom, #002414, #003e1c); /* Darker gradient */
+    border-radius: 12px;
+    padding: 20px;
+    color: #e6e6e6; /* Light gray text */
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3); /* Add depth */
+  }
+  
+  /* Header Styling */
+  .leaderboard-title {
+    text-align: center;
+    font-weight: bold;
+    color: #f4c430; /* Yellow accent */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Subtle glow */
+    margin-bottom: 20px;
+    font-size: 24px;
+  }
+  
+  /* Table Styling */
+  .leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #003e1c; /* Solid dark green */
+    border: 2px solid #f4c430; /* Yellow border */
+    border-radius: 8px;
+    overflow: hidden;
+    color: #003e1c; /* Soft light gray for table text */
+  }
+  
+  .leaderboard-table thead {
+    background-color: #f4c430; /* Yellow header */
+    color: #004225; /* Masters green text */
+    font-weight: bold;
+  }
+  
+  .leaderboard-table thead th {
+    padding: 12px;
+    font-size: 16px;
+    text-align: center;
+  }
+  
+  /* Table Row Styling */
+  .leaderboard-table tbody tr:nth-child(odd) {
+    background-color: #004d25; /* Dark green for odd rows */
+    color: #003e1c; /* Softer gray text */
+  }
+  
+  .leaderboard-table tbody tr:nth-child(even) {
+    background-color: #003e1c; /* Slightly darker green for even rows */
+    color: #003e1c; /* Softer gray text */
+  }
+  
+  .leaderboard-table tbody tr:hover {
+    background-color: #005a30; /* Bright green hover effect */
+    color: #d4d4d4; /* White text on hover */
+  }
+  
+  .leaderboard-table tbody td {
+    text-align: center;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+  
+  /* Rank Column */
+  .leaderboard-table tbody td:first-child {
+    font-weight: bold;
+    color: #f4c430; /* Yellow for ranks */
+  }
+  
+  /* Team Column */
+  .leaderboard-table tbody td:last-child {
+    font-weight: bold;
+    color: #e6ffe6; /* Light green for team names */
+  }
+  
+  /* Highlight for Rows */
+  .leaderboard-table tbody tr.highlight {
+    background-color: #ffcc99; /* Light orange for special highlights */
+    color: #004225; /* Masters green text */
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .leaderboard-table thead th,
+    .leaderboard-table tbody td {
+      font-size: 14px;
+      padding: 8px;
+    }
+  }
+  
+  
+  
+  

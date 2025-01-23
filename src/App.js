@@ -12,7 +12,7 @@ const App = () => {
       <Navbar />
       <Routes>
         {/* League Selector Page (Default) */}
-        <Route path="/" element={<LeagueSelector />} />
+        <Route path="/fantasy_golf" element={<LeagueSelector />} />
 
         {/* Home Page */}
         <Route path="/home" element={<Home />} />

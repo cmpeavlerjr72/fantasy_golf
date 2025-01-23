@@ -29,7 +29,7 @@ const Navbar = () => {
               <Link className="nav-link" to="/scoreboard">Scoreboard</Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link" to="/LeagueSelector">LeagueSelector</Link>
+              <Link className="nav-link" to="/fantasy_golf">LeagueSelector</Link>
             </li>
           </ul>
         </div>

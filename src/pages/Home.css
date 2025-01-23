@@ -36,6 +36,36 @@ h4 {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
 }
 
+/* Button Styling */
+.btn-primary {
+  background-color: #1a73e8; /* Blue */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #135ba1; /* Darker blue on hover */
+}
+
+.btn-primary:disabled {
+  background-color: #cccccc; /* Gray for disabled state */
+  cursor: not-allowed;
+}
+
+/* Last Updated Message */
+.mb-4 p {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #f8f8f8; /* Light text for contrast */
+  font-style: italic;
+  text-align: left;
+}
+
 /* Leaderboard Table Styling */
 .table {
   background-color: rgba(200, 220, 255, 0.9); /* Slightly lighter blue background */
@@ -170,7 +200,7 @@ h4 {
 }
 
 .table.scorecard td {
-  background-color:  #d8eafb; /* Light background */
+  background-color: #d8eafb; /* Light background */
   color: black; /* Black text */
 }
 
@@ -180,7 +210,6 @@ h4 {
   font-weight: bold;
   background-color: #a0d1ff; /* Light blue highlight */
 }
-
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
@@ -192,6 +221,3 @@ h4 {
     font-size: 14px;
   }
 }
-
-
-

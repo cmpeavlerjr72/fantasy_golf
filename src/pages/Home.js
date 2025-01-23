@@ -8,6 +8,8 @@ const Home = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [lastUpdateTime, setLastUpdateTime] = useState(null); // Track the last update time
+  const [isUpdating, setIsUpdating] = useState(false); // Track the update status
 
   // Helper function to normalize names for consistent comparison
   const normalizeName = (name) => name?.toLowerCase().trim();
@@ -27,7 +29,7 @@ const Home = () => {
         .catch((error) => console.error('Error fetching league data:', error));
 
       // Fetch live tournament stats
-      fetch('http://localhost:5000/tournament-stats')
+      fetch('http://localhost:5000/live-stats')
         .then((response) => response.json())
         .then((data) => {
           if (data.live_stats && Array.isArray(data.live_stats)) {
@@ -40,6 +42,12 @@ const Home = () => {
         })
         .catch((error) => console.error('Error fetching live tournament stats:', error));
     }
+
+    // Fetch the last update time
+    fetch('http://localhost:5000/last-update')
+      .then((response) => response.json())
+      .then((data) => setLastUpdateTime(data.lastUpdate))
+      .catch((error) => console.error('Error fetching last update time:', error));
   }, []);
 
   // Fetch scorecard data when a player is selected
@@ -82,6 +90,24 @@ const Home = () => {
     fetchScorecardData(playerName);
   };
 
+  // Handle updating data via the backend
+  const handleUpdateData = () => {
+    setIsUpdating(true);
+    fetch('http://localhost:5000/update-data', { method: 'POST' })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to update data');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setLastUpdateTime(data.lastUpdateTime);
+        alert('Data updated successfully!');
+      })
+      .catch((error) => alert(error.message))
+      .finally(() => setIsUpdating(false));
+  };
+
   // Get styles for scores based on comparison with par
   const getScoreStyle = (score, par) => {
     const styles = {
@@ -91,10 +117,9 @@ const Home = () => {
       lineHeight: '24px', // Aligns text vertically
       textAlign: 'center',
       fontWeight: 'bold',
-      // backgroundColor: '#ADD8E6', // Light blue background for consistency
       borderRadius: '0', // Default (no rounded edges)
     };
-  
+
     if (score < par) {
       styles.color = 'red'; // Text color for scores under par
       if (score === par - 1) {
@@ -116,7 +141,7 @@ const Home = () => {
     } else if (score === par) {
       styles.color = 'green'; // Text color for par
     }
-  
+
     return styles;
   };
 
@@ -125,6 +150,22 @@ const Home = () => {
   return (
     <div className="container">
       <h2>Welcome to League {leagueId}</h2>
+
+      {/* Update Data Button */}
+      <div className="text-center mb-4">
+        <button
+          className="btn btn-primary"
+          onClick={handleUpdateData}
+          disabled={isUpdating}
+        >
+          {isUpdating ? 'Updating...' : 'Update Data'}
+        </button>
+        {lastUpdateTime && (
+          <p className="mt-2">
+            Last updated: <strong>{new Date(lastUpdateTime).toLocaleString()}</strong>
+          </p>
+        )}
+      </div>
 
       {/* Leaderboard */}
       <h4 className="mt-4">Team Leaderboard</h4>
@@ -200,8 +241,12 @@ const Home = () => {
             </thead>
             <tbody>
               {(selectedPlayer.rounds || []).map((round, roundIndex) => {
-                const outScore = round.scores.slice(0, 9).reduce((sum, hole) => sum + hole.score, 0);
-                const inScore = round.scores.slice(9).reduce((sum, hole) => sum + hole.score, 0);
+                const outScore = round.scores
+                  .slice(0, 9)
+                  .reduce((sum, hole) => sum + hole.score, 0);
+                const inScore = round.scores
+                  .slice(9)
+                  .reduce((sum, hole) => sum + hole.score, 0);
                 const totalScore = outScore + inScore;
 
                 return (
@@ -209,7 +254,9 @@ const Home = () => {
                     <td>Round {round.round_num}</td>
                     {round.scores.map((hole, holeIndex) => (
                       <td key={`hole-${holeIndex}`}>
-                        <span style={getScoreStyle(hole.score, hole.par)}>{hole.score}</span>
+                        <span style={getScoreStyle(hole.score, hole.par)}>
+                          {hole.score}
+                        </span>
                       </td>
                     ))}
                     <td>{outScore}</td>
@@ -227,17 +274,3 @@ const Home = () => {
 };
 
 export default Home;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
