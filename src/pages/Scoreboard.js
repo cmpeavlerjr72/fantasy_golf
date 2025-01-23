@@ -13,11 +13,13 @@ const Scoreboard = () => {
   const [fieldData, setFieldData] = useState([]); // Field data for tee times
   const [holesData, setHolesData] = useState(null); // Holes data for round info
 
+  const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
+
   useEffect(() => {
     const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
     // Fetch tournament stats data
-    fetch('http://localhost:5000/live-stats')
+    fetch(`${API_BASE_URL}/live-stats`)
       .then((response) => {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.json();
@@ -44,13 +46,13 @@ const Scoreboard = () => {
       .finally(() => setLoading(false));
 
     // Fetch field data for tee times
-    fetch('http://localhost:5000/field')
+    fetch(`${API_BASE_URL}/field`)
       .then((response) => response.json())
       .then((data) => setFieldData(data.field || []))
       .catch((error) => console.error('Error fetching field data:', error));
 
     // Fetch holes data
-    fetch('http://localhost:5000/holes')
+    fetch(`${API_BASE_URL}/holes`)
       .then((response) => response.json())
       .then((data) => setHolesData(data))
       .catch((error) => console.error('Error fetching holes data:', error));
@@ -59,7 +61,7 @@ const Scoreboard = () => {
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (selectedLeague) {
       setLeagueId(selectedLeague);
-      fetch(`http://localhost:5000/leagues/${selectedLeague}`)
+      fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
         .then((response) => response.json())
         .then((data) => {
           console.log('Fetched league data:', data); // Debugging
@@ -88,20 +90,20 @@ const Scoreboard = () => {
     if (thru < 18) {
       return thru; // Return the current "thru" value if less than 18
     }
-  
+
     if (holesData && holesData.players) {
       const maxRoundNum = Math.max(
         ...holesData.players.flatMap((player) =>
           player.rounds?.map((round) => round.round_num) || []
         )
       );
-  
+
       const player = fieldData.find((fieldPlayer) => fieldPlayer.player_name === playerName);
       if (player && player[`r${maxRoundNum + 1}_teetime`]) {
         return player[`r${maxRoundNum + 1}_teetime`];
       }
     }
-  
+
     return 18; // Default to 18 if no tee time or data is available
   };
 
@@ -145,5 +147,3 @@ const Scoreboard = () => {
 };
 
 export default Scoreboard;
-
-

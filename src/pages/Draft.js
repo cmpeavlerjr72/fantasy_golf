@@ -12,6 +12,8 @@ const Draft = () => {
   const [snakeDirection, setSnakeDirection] = useState(1); // Direction of the draft (1 = forward, -1 = backward)
   const [leagueId, setLeagueId] = useState(''); // Current league ID
 
+  const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
+
   useEffect(() => {
     const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
@@ -20,7 +22,7 @@ const Draft = () => {
       setLeagueId(selectedLeague);
 
       // Fetch players from the field.json
-      fetch('http://localhost:5000/field')
+      fetch(`${API_BASE_URL}/field`)
         .then((response) => response.json())
         .then((fieldData) => {
           const fieldPlayers = fieldData.field.map((player) => ({
@@ -29,7 +31,7 @@ const Draft = () => {
           }));
 
           // Fetch rankings from the rankings.json
-          fetch('http://localhost:5000/rankings')
+          fetch(`${API_BASE_URL}/rankings`)
             .then((response) => response.json())
             .then((rankingsData) => {
               const playersWithRankings = fieldPlayers.map((player) => {
@@ -57,7 +59,7 @@ const Draft = () => {
         .catch((error) => console.error('Error fetching player data:', error));
 
       // Fetch teams from the server
-      fetch(`http://localhost:5000/leagues/${selectedLeague}`)
+      fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
         .then((response) => response.json())
         .then((data) => {
           setTeams(data.teams);
@@ -65,7 +67,7 @@ const Draft = () => {
         })
         .catch((error) => console.error('Error fetching league data:', error));
     }
-  }, []);
+  }, [API_BASE_URL]);
 
   const handleDraftPlayer = (playerIndex) => {
     if (!isDrafting || draftComplete) return;
@@ -84,7 +86,7 @@ const Draft = () => {
     if (allTeamsFull) {
       setDraftComplete(true);
 
-      fetch(`http://localhost:5000/leagues/${leagueId}`, {
+      fetch(`${API_BASE_URL}/leagues/${leagueId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -203,13 +205,3 @@ const Draft = () => {
 };
 
 export default Draft;
-
-
-
-
-
-
-
-
-
-

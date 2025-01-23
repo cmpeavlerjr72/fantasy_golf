@@ -10,11 +10,13 @@ const LeagueSelector = () => {
   const [newLeagueId, setNewLeagueId] = useState(null);
   const navigate = useNavigate();
 
+  const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
+
   const handleAccessLeague = async (e) => {
     e.preventDefault();
     if (leagueId.trim()) {
       try {
-        const response = await fetch(`http://localhost:5000/leagues/${leagueId.trim()}`);
+        const response = await fetch(`${API_BASE_URL}/leagues/${leagueId.trim()}`);
         if (!response.ok) {
           throw new Error('League not found.');
         }
@@ -30,7 +32,7 @@ const LeagueSelector = () => {
 
   const handleStartNewLeague = async () => {
     try {
-      const response = await fetch('http://localhost:5000/leagues', {
+      const response = await fetch(`${API_BASE_URL}/leagues`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ teams: [], teamNames: [] }),
@@ -54,7 +56,7 @@ const LeagueSelector = () => {
 
   const handleCompleteNewLeague = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/leagues/${newLeagueId}`, {
+      const response = await fetch(`${API_BASE_URL}/leagues/${newLeagueId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,10 +67,10 @@ const LeagueSelector = () => {
       if (!response.ok) {
         throw new Error('Failed to save the new league.');
       }
-  
+
       // Save the selected league ID to localStorage
       localStorage.setItem('selectedLeague', newLeagueId);
-  
+
       // Navigate to the Home page
       setShowNewLeagueDialog(false);
       setNewLeagueTeams([]);
@@ -143,8 +145,3 @@ const LeagueSelector = () => {
 };
 
 export default LeagueSelector;
-
-
-
-
-

@@ -11,6 +11,8 @@ const Home = () => {
   const [lastUpdateTime, setLastUpdateTime] = useState(null); // Track the last update time
   const [isUpdating, setIsUpdating] = useState(false); // Track the update status
 
+  const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
+
   // Helper function to normalize names for consistent comparison
   const normalizeName = (name) => name?.toLowerCase().trim();
 
@@ -20,7 +22,7 @@ const Home = () => {
       setLeagueId(selectedLeague);
 
       // Fetch league data
-      fetch(`http://localhost:5000/leagues/${selectedLeague}`)
+      fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
         .then((response) => response.json())
         .then((data) => {
           setTeams(data.teams);
@@ -29,7 +31,7 @@ const Home = () => {
         .catch((error) => console.error('Error fetching league data:', error));
 
       // Fetch live tournament stats
-      fetch('http://localhost:5000/live-stats')
+      fetch(`${API_BASE_URL}/live-stats`)
         .then((response) => response.json())
         .then((data) => {
           if (data.live_stats && Array.isArray(data.live_stats)) {
@@ -44,7 +46,7 @@ const Home = () => {
     }
 
     // Fetch the last update time
-    fetch('http://localhost:5000/last-update')
+    fetch(`${API_BASE_URL}/last-update`)
       .then((response) => response.json())
       .then((data) => setLastUpdateTime(data.lastUpdate))
       .catch((error) => console.error('Error fetching last update time:', error));
@@ -52,7 +54,7 @@ const Home = () => {
 
   // Fetch scorecard data when a player is selected
   const fetchScorecardData = (playerName) => {
-    fetch('http://localhost:5000/holes')
+    fetch(`${API_BASE_URL}/holes`)
       .then((response) => response.json())
       .then((data) => {
         const playerData = data.players.find(
@@ -93,7 +95,7 @@ const Home = () => {
   // Handle updating data via the backend
   const handleUpdateData = () => {
     setIsUpdating(true);
-    fetch('http://localhost:5000/update-data', { method: 'POST' })
+    fetch(`${API_BASE_URL}/update-data`, { method: 'POST' })
       .then((response) => {
         if (!response.ok) {
           throw new Error('Failed to update data');
