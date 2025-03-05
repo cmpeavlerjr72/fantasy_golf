@@ -12,18 +12,34 @@ const Scoreboard = () => {
   const [eventName, setEventName] = useState(''); // Event name
   const [fieldData, setFieldData] = useState([]); // Field data for tee times
   const [holesData, setHolesData] = useState(null); // Holes data for round info
-  const [isWednesday, setIsWednesday] = useState(false); // Check if it's Wednesday
 
   const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
   useEffect(() => {
     const today = new Date();
-    setIsWednesday(today.getDay() === 3); // Check if today is Wednesday (3 = Wednesday)
+    const isWednesday = today.getDay() === 3; // 3 = Wednesday
 
     const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
-    if (!isWednesday) {
-      // Fetch tournament stats data
+    if (isWednesday) {
+      // 🟢 Fetch field data for tee times (Wednesdays)
+      console.log('Fetching field data for Wednesday...');
+      fetch(`${API_BASE_URL}/field`)
+        .then((response) => response.json())
+        .then((data) => {
+          setFieldData(data.field || []);
+          setEventName(data.event_name || 'Golf Tournament');
+          setLeaderboard([]); // Clear leaderboard so it doesn't persist on Wednesdays
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching field data:', error);
+          setError(error.message);
+          setLoading(false);
+        });
+    } else {
+      // 🔵 Fetch tournament stats for live leaderboard (Thursday - Sunday)
+      console.log('Fetching tournament stats...');
       fetch(`${API_BASE_URL}/live-stats`)
         .then((response) => {
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -45,17 +61,16 @@ const Scoreboard = () => {
             scoreToPar: player.total || '-',
             thru: player.thru || '-',
           }));
-          setLeaderboard(players);
-        })
-        .catch((error) => setError(error.message))
-        .finally(() => setLoading(false));
-    }
 
-    // Fetch field data for tee times (used on Wednesdays)
-    fetch(`${API_BASE_URL}/field`)
-      .then((response) => response.json())
-      .then((data) => setFieldData(data.field || []))
-      .catch((error) => console.error('Error fetching field data:', error));
+          setLeaderboard(players);
+          setFieldData([]); // Clear field data so it doesn't persist after Wednesday
+          setLoading(false);
+        })
+        .catch((error) => {
+          setError(error.message);
+          setLoading(false);
+        });
+    }
 
     // Fetch holes data
     fetch(`${API_BASE_URL}/holes`)
@@ -90,15 +105,16 @@ const Scoreboard = () => {
         })
         .catch((error) => console.error('Error fetching league data:', error));
     }
-  }, [isWednesday]);
+  }, []); // 🛑 Removed dependency on `isWednesday` to prevent unnecessary re-renders
 
   return (
     <div className="container masters-scoreboard">
-      <h2 className="leaderboard-title">{eventName} {isWednesday ? 'Field List' : 'Leaderboard'}</h2>
+      <h2 className="leaderboard-title">{eventName} {fieldData.length > 0 ? 'Field List' : 'Leaderboard'}</h2>
       {loading && <div>Loading data...</div>}
       {error && <div className="alert alert-danger">{`Error: ${error}`}</div>}
 
-      {!loading && isWednesday ? (
+      {/* 🟢 Display Field Data on Wednesdays */}
+      {!loading && fieldData.length > 0 ? (
         <table className="leaderboard-table">
           <thead>
             <tr>
@@ -115,39 +131,41 @@ const Scoreboard = () => {
             ))}
           </tbody>
         </table>
-      ) : !loading && leaderboard.length > 0 ? (
-        <table className="leaderboard-table">
-          <thead>
-            <tr>
-              <th>Position</th>
-              <th>Player</th>
-              <th>Score to Par</th>
-              <th>Thru</th>
-              <th>Team</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leaderboard.map((player) => {
-              const teamName = teams[player.normalizedName];
-              const rowStyle = { backgroundColor: teamColors[teamName] || 'white' };
-              return (
-                <tr key={player.id} style={rowStyle}>
-                  <td>{player.position}</td>
-                  <td>{player.name}</td>
-                  <td>{player.scoreToPar}</td>
-                  <td>{player.thru}</td>
-                  <td>{teamName || '-'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
       ) : (
-        !loading && <div>No data available.</div>
+        // 🔵 Display Live Leaderboard Thursday - Sunday
+        !loading && leaderboard.length > 0 ? (
+          <table className="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Position</th>
+                <th>Player</th>
+                <th>Score to Par</th>
+                <th>Thru</th>
+                <th>Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboard.map((player) => {
+                const teamName = teams[player.normalizedName];
+                const rowStyle = { backgroundColor: teamColors[teamName] || 'white' };
+                return (
+                  <tr key={player.id} style={rowStyle}>
+                    <td>{player.position}</td>
+                    <td>{player.name}</td>
+                    <td>{player.scoreToPar}</td>
+                    <td>{player.thru}</td>
+                    <td>{teamName || '-'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ) : (
+          !loading && <div>No data available.</div>
+        )
       )}
     </div>
   );
 };
 
 export default Scoreboard;
-
