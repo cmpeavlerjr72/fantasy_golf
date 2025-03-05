@@ -12,40 +12,46 @@ const Scoreboard = () => {
   const [eventName, setEventName] = useState(''); // Event name
   const [fieldData, setFieldData] = useState([]); // Field data for tee times
   const [holesData, setHolesData] = useState(null); // Holes data for round info
+  const [isWednesday, setIsWednesday] = useState(false); // Check if it's Wednesday
 
   const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
   useEffect(() => {
+    const today = new Date();
+    setIsWednesday(today.getDay() === 3); // Check if today is Wednesday (3 = Wednesday)
+
     const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
-    // Fetch tournament stats data
-    fetch(`${API_BASE_URL}/live-stats`)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return response.json();
-      })
-      .then((data) => {
-        console.log('Fetched tournament stats:', data); // Debugging
-        setEventName(data.event_name || 'Golf Tournament');
+    if (!isWednesday) {
+      // Fetch tournament stats data
+      fetch(`${API_BASE_URL}/live-stats`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+          return response.json();
+        })
+        .then((data) => {
+          console.log('Fetched tournament stats:', data);
+          setEventName(data.event_name || 'Golf Tournament');
 
-        if (!data.live_stats || !Array.isArray(data.live_stats)) {
-          throw new Error('Invalid data structure: `live_stats` is missing or not an array.');
-        }
+          if (!data.live_stats || !Array.isArray(data.live_stats)) {
+            throw new Error('Invalid data structure: `live_stats` is missing or not an array.');
+          }
 
-        const players = data.live_stats.map((player) => ({
-          id: player.dg_id,
-          name: player.player_name,
-          normalizedName: normalizeName(player.player_name),
-          position: player.position || '-',
-          scoreToPar: player.total || '-',
-          thru: player.thru || '-', // Include the "thru" value
-        }));
-        setLeaderboard(players);
-      })
-      .catch((error) => setError(error.message))
-      .finally(() => setLoading(false));
+          const players = data.live_stats.map((player) => ({
+            id: player.dg_id,
+            name: player.player_name,
+            normalizedName: normalizeName(player.player_name),
+            position: player.position || '-',
+            scoreToPar: player.total || '-',
+            thru: player.thru || '-',
+          }));
+          setLeaderboard(players);
+        })
+        .catch((error) => setError(error.message))
+        .finally(() => setLoading(false));
+    }
 
-    // Fetch field data for tee times
+    // Fetch field data for tee times (used on Wednesdays)
     fetch(`${API_BASE_URL}/field`)
       .then((response) => response.json())
       .then((data) => setFieldData(data.field || []))
@@ -64,7 +70,7 @@ const Scoreboard = () => {
       fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
         .then((response) => response.json())
         .then((data) => {
-          console.log('Fetched league data:', data); // Debugging
+          console.log('Fetched league data:', data);
           const playerToTeamMap = {};
           data.teams.forEach((team, teamIndex) => {
             team.forEach((player) => {
@@ -84,35 +90,32 @@ const Scoreboard = () => {
         })
         .catch((error) => console.error('Error fetching league data:', error));
     }
-  }, []);
-
-  const getThruOrTeeTime = (playerName, thru) => {
-    if (thru < 18) {
-      return thru; // Return the current "thru" value if less than 18
-    }
-
-    if (holesData && holesData.players) {
-      const maxRoundNum = Math.max(
-        ...holesData.players.flatMap((player) =>
-          player.rounds?.map((round) => round.round_num) || []
-        )
-      );
-
-      const player = fieldData.find((fieldPlayer) => fieldPlayer.player_name === playerName);
-      if (player && player[`r${maxRoundNum + 1}_teetime`]) {
-        return player[`r${maxRoundNum + 1}_teetime`];
-      }
-    }
-
-    return 18; // Default to 18 if no tee time or data is available
-  };
+  }, [isWednesday]);
 
   return (
     <div className="container masters-scoreboard">
-      <h2 className="leaderboard-title">{eventName} Leaderboard</h2>
-      {loading && <div>Loading leaderboard...</div>}
+      <h2 className="leaderboard-title">{eventName} {isWednesday ? 'Field List' : 'Leaderboard'}</h2>
+      {loading && <div>Loading data...</div>}
       {error && <div className="alert alert-danger">{`Error: ${error}`}</div>}
-      {!loading && leaderboard.length > 0 ? (
+
+      {!loading && isWednesday ? (
+        <table className="leaderboard-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>Round 1 Tee Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            {fieldData.map((player) => (
+              <tr key={player.dg_id}>
+                <td>{player.player_name}</td>
+                <td>{player.r1_teetime || 'TBD'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : !loading && leaderboard.length > 0 ? (
         <table className="leaderboard-table">
           <thead>
             <tr>
@@ -132,7 +135,7 @@ const Scoreboard = () => {
                   <td>{player.position}</td>
                   <td>{player.name}</td>
                   <td>{player.scoreToPar}</td>
-                  <td>{getThruOrTeeTime(player.name, player.thru)}</td>
+                  <td>{player.thru}</td>
                   <td>{teamName || '-'}</td>
                 </tr>
               );
@@ -147,3 +150,4 @@ const Scoreboard = () => {
 };
 
 export default Scoreboard;
+
