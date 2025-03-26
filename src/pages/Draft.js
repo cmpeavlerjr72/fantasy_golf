@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('https://golf-server-0fea.onrender.com'); // Adjust if needed
+const socket = io('https://golf-server-0fea.onrender.com');
 
 const Draft = () => {
   const [players, setPlayers] = useState([]);
@@ -62,32 +62,51 @@ const Draft = () => {
       });
 
     // Socket listener
-    socket.on('updateDraft', ({ leagueId: updateLeagueId, teams, sortedPlayers, currentTeam, snakeDirection, draftComplete }) => {
+    socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       if (updateLeagueId !== selectedLeague) return;
-      setTeams(teams);
-      setSortedPlayers(sortedPlayers);
-      setCurrentTeam(currentTeam);
-      setSnakeDirection(snakeDirection);
-      setDraftComplete(draftComplete);
+
+      setTeams((prev) => {
+        const updated = [...prev];
+        updated[teamIndex] = [...updated[teamIndex], player];
+        return updated;
+      });
+
+      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id));
+
+      // Move to next team
+      setCurrentTeam((prev) => {
+        let next = prev + snakeDirection;
+        if (next >= teams.length) {
+          setSnakeDirection(-1);
+          next = teams.length - 1;
+        } else if (next < 0) {
+          setSnakeDirection(1);
+          next = 0;
+        }
+        return next;
+      });
+
+      // Check for completion
+      setDraftComplete((prev) => {
+        const tempTeams = [...teams];
+        tempTeams[teamIndex].push(player);
+        return tempTeams.every((t) => t.length === 6);
+      });
     });
 
     return () => {
-      socket.off('updateDraft');
+      socket.off('draft-update');
     };
-  }, []);
+  }, [snakeDirection, teams.length]);
 
   const handleDraftPlayer = (playerIndex) => {
     if (!isDrafting || draftComplete || currentTeam === null) return;
 
     const player = sortedPlayers[playerIndex];
-    socket.emit('draftPlayer', {
+    socket.emit('draft-pick', {
       leagueId,
+      teamIndex: currentTeam,
       player,
-      currentTeam,
-      sortedPlayers,
-      teams,
-      teamNames,
-      snakeDirection,
     });
   };
 
