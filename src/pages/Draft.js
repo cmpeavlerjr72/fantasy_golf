@@ -128,7 +128,7 @@ const Draft = () => {
         <div className="col-md-6">
           <h2>Draft Your Team</h2>
 
-          {!confirmedTeamIndex && (
+          {confirmedTeamIndex == null && (
             <div className="mb-3">
               <label htmlFor="teamSelect" className="form-label">Select your team:</label>
               <select
