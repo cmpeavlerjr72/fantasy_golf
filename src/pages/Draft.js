@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('https://golf-server-0fea.onrender.com'); // Update if needed
+const socket = io('https://golf-server-0fea.onrender.com');
 
 const Draft = () => {
   const [players, setPlayers] = useState([]);
@@ -29,21 +29,21 @@ const Draft = () => {
     if (!selectedLeague) return;
     setLeagueId(selectedLeague);
 
-    // Fetch players
+    // Fetch players and rankings
     fetch(`${API_BASE_URL}/field`)
-      .then((res) => res.json())
-      .then((fieldData) => {
-        const fieldPlayers = fieldData.field.map((p) => ({
+      .then(res => res.json())
+      .then(fieldData => {
+        const fieldPlayers = fieldData.field.map(p => ({
           id: p.dg_id,
           name: p.player_name,
         }));
 
         fetch(`${API_BASE_URL}/rankings`)
-          .then((res) => res.json())
-          .then((rankingsData) => {
-            const playersWithRankings = fieldPlayers.map((p) => {
+          .then(res => res.json())
+          .then(rankingsData => {
+            const playersWithRankings = fieldPlayers.map(p => {
               const match = rankingsData.rankings.find(
-                (r) => normalizeName(r.player_name) === normalizeName(p.name)
+                r => normalizeName(r.player_name) === normalizeName(p.name)
               );
               return {
                 ...p,
@@ -58,28 +58,28 @@ const Draft = () => {
           });
       });
 
-    // Fetch teams and team names
+    // Fetch league data
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
-      .then((res) => res.json())
-      .then((data) => {
+      .then(res => res.json())
+      .then(data => {
         setTeams(data.teams);
         setTeamNames(data.teamNames);
       });
 
-    // Socket listener
+    // Listen for draft updates
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       if (updateLeagueId !== selectedLeague) return;
 
-      setTeams((prevTeams) => {
-        const updated = [...prevTeams];
+      setTeams(prev => {
+        const updated = [...prev];
         updated[teamIndex] = [...updated[teamIndex], player];
         return updated;
       });
 
-      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id));
+      setSortedPlayers(prev => prev.filter(p => p.id !== player.id));
 
-      setCurrentTeam((prevTeam) => {
-        const next = snakeDirection === 1 ? prevTeam + 1 : prevTeam - 1;
+      setCurrentTeam(prev => {
+        const next = snakeDirection === 1 ? prev + 1 : prev - 1;
         if (next >= teams.length) {
           setSnakeDirection(-1);
           return teams.length - 1;
@@ -91,10 +91,10 @@ const Draft = () => {
         }
       });
 
-      setDraftComplete((prev) => {
-        const tempTeams = [...teams];
-        tempTeams[teamIndex].push(player);
-        return tempTeams.every((team) => team.length === 6);
+      setDraftComplete(prev => {
+        const temp = [...teams];
+        temp[teamIndex].push(player);
+        return temp.every(t => t.length === 6);
       });
     });
 
@@ -106,7 +106,7 @@ const Draft = () => {
     const player = sortedPlayers[playerIndex];
     socket.emit('draft-pick', {
       leagueId,
-      teamIndex: currentTeam,
+      teamIndex: confirmedTeamIndex,
       player,
     });
   };
@@ -128,15 +128,18 @@ const Draft = () => {
         <div className="col-md-6">
           <h2>Draft Your Team</h2>
 
-          
-            <div className="mb-3">
+          <div className="mb-3">
             <label htmlFor="teamSelect" className="form-label">Your Team:</label>
             <select
               id="teamSelect"
               className="form-select"
-              value={confirmedTeamIndex !== null ? confirmedTeamIndex : selectedTeamIndex || ''}
+              value={
+                confirmedTeamIndex !== null
+                  ? confirmedTeamIndex
+                  : selectedTeamIndex || ''
+              }
               onChange={(e) => setSelectedTeamIndex(Number(e.target.value))}
-              disabled={confirmedTeamIndex !== null} // freeze after confirmation
+              disabled={confirmedTeamIndex !== null}
             >
               <option value="" disabled>Select team...</option>
               {teamNames.map((name, index) => (
@@ -145,7 +148,7 @@ const Draft = () => {
                 </option>
               ))}
             </select>
-          
+
             {confirmedTeamIndex === null && (
               <button
                 className="btn btn-success mt-2"
@@ -156,7 +159,6 @@ const Draft = () => {
               </button>
             )}
           </div>
-          
 
           <div className="mb-3">
             <button
@@ -204,8 +206,12 @@ const Draft = () => {
                   key={index}
                   onClick={() => handleDraftPlayer(index)}
                   style={{
-                    cursor: confirmedTeamIndex === currentTeam && isDrafting && !draftComplete ? 'pointer' : 'not-allowed',
-                    opacity: confirmedTeamIndex === currentTeam && isDrafting && !draftComplete ? 1 : 0.5
+                    cursor: confirmedTeamIndex === currentTeam && isDrafting && !draftComplete
+                      ? 'pointer'
+                      : 'not-allowed',
+                    opacity: confirmedTeamIndex === currentTeam && isDrafting && !draftComplete
+                      ? 1
+                      : 0.5,
                   }}
                 >
                   <td>{player.owgr_rank}</td>
