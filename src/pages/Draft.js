@@ -23,6 +23,7 @@ const Draft = () => {
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
+  // Initialize socket connection
   useEffect(() => {
     const newSocket = io(API_BASE_URL, { reconnection: true, reconnectionAttempts: Infinity, reconnectionDelay: 1000 });
     newSocket.on('connect', () => console.log('Socket connected successfully'));
@@ -36,6 +37,7 @@ const Draft = () => {
     };
   }, []);
 
+  // Fetch initial data (players and league info)
   useEffect(() => {
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (!selectedLeague) {
@@ -90,6 +92,7 @@ const Draft = () => {
     }
   }, []);
 
+  // Handle socket events (team assignment, draft updates, and draft reset)
   useEffect(() => {
     if (!socket || !leagueId || myTeam === null) return;
 
@@ -103,6 +106,20 @@ const Draft = () => {
         setError(message);
         resetTeamSelection();
       }
+    });
+
+    socket.on('draft-reset', ({ leagueId: resetLeagueId }) => {
+      if (resetLeagueId !== leagueId) return;
+      console.log('Received draft-reset for league:', resetLeagueId);
+      resetTeamSelection();
+      setDraftState((prev) => ({
+        ...prev,
+        isDrafting: false,
+        draftComplete: false,
+        currentTeam: 0,
+        snakeDirection: 1,
+        teams: prev.teams.map(() => []),
+      }));
     });
 
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
@@ -151,6 +168,7 @@ const Draft = () => {
     return () => {
       socket.off('draft-update');
       socket.off('team-assigned');
+      socket.off('draft-reset');
     };
   }, [socket, leagueId, myTeam]);
 
@@ -174,6 +192,7 @@ const Draft = () => {
 
   const assignTeam = (teamIndex) => {
     setMyTeam(teamIndex);
+    setDraftState((prev) => ({ ...prev, isDrafting: true })); // Start drafting after team selection
   };
 
   const resetTeamSelection = () => {
@@ -187,11 +206,11 @@ const Draft = () => {
     resetTeamSelection();
     setDraftState((prev) => ({
       ...prev,
-      isDrafting: false, // Ensure isDrafting is false until team is selected
+      isDrafting: false,
       draftComplete: false,
       currentTeam: 0,
       snakeDirection: 1,
-      teams: prev.teams.map(() => []), // Reset teams to empty arrays
+      teams: prev.teams.map(() => []),
     }));
     // Notify server to clear team ownership
     if (socket) {
