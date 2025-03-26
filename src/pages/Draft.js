@@ -17,7 +17,9 @@ const Draft = () => {
   const [leagueId, setLeagueId] = useState('');
   const [socket, setSocket] = useState(null);
   const [sortBy, setSortBy] = useState('owgr_rank');
-  const [myTeam, setMyTeam] = useState(null); // Client's team index
+  const [myTeam, setMyTeam] = useState(null);
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true); // Add loading state
+  const [error, setError] = useState(null); // Add error state
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
@@ -36,9 +38,14 @@ const Draft = () => {
 
   useEffect(() => {
     const selectedLeague = localStorage.getItem('selectedLeague');
-    if (!selectedLeague) return;
+    if (!selectedLeague) {
+      setError('No league selected. Please select a league first.');
+      setIsLoadingTeams(false);
+      return;
+    }
     setLeagueId(selectedLeague);
 
+    // Fetch player data
     fetch(`${API_BASE_URL}/field`)
       .then((res) => res.json())
       .then((fieldData) => {
@@ -53,27 +60,46 @@ const Draft = () => {
             const sorted = [...playersWithRankings].sort((a, b) => a.owgr_rank - b.owgr_rank);
             setDraftState((prev) => ({ ...prev, players: playersWithRankings, sortedPlayers: sorted }));
           });
+      })
+      .catch((err) => {
+        console.error('Error fetching player data:', err);
+        setError('Failed to load player data.');
       });
 
+    // Fetch league data
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
-      .then((res) => res.json())
-      .then((data) => setDraftState((prev) => ({ ...prev, teams: data.teams, teamNames: data.teamNames })));
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch league data');
+        return res.json();
+      })
+      .then((data) => {
+        console.log('Draft fetched league data:', data);
+        setDraftState((prev) => ({ ...prev, teams: data.teams || [], teamNames: data.teamNames || [] }));
+        setIsLoadingTeams(false);
+      })
+      .catch((err) => {
+        console.error('Error fetching league data:', err);
+        setError('Failed to load league data.');
+        setIsLoadingTeams(false);
+      });
 
-    // Check for existing team assignment
+    // Only set myTeam if explicitly assigned in this session
     const storedTeam = localStorage.getItem('myTeam');
-    if (storedTeam !== null) {
+    if (storedTeam !== null && localStorage.getItem('teamAssignedInSession')) {
       setMyTeam(parseInt(storedTeam, 10));
+    } else {
+      // Clear any previous team assignment to force selection
+      localStorage.removeItem('myTeam');
+      localStorage.removeItem('teamAssignedInSession');
     }
   }, []);
 
   useEffect(() => {
-    if (!socket || !leagueId) return;
+    if (!socket || !leagueId || myTeam === null) return;
 
-    // Send team assignment to server when myTeam is set
-    if (myTeam !== null) {
-      socket.emit('assign-team', { leagueId, teamIndex: myTeam });
-      localStorage.setItem('myTeam', myTeam.toString());
-    }
+    socket.emit('assign-team', { leagueId, teamIndex: myTeam });
+    localStorage.setItem('myTeam', myTeam.toString());
+    localStorage.setItem('teamAssignedInSession', 'true'); // Mark that team was assigned in this session
 
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}, id=${player.id}`);
@@ -143,20 +169,36 @@ const Draft = () => {
     setMyTeam(teamIndex);
   };
 
+  const resetTeamSelection = () => {
+    setMyTeam(null);
+    localStorage.removeItem('myTeam');
+    localStorage.removeItem('teamAssignedInSession');
+  };
+
   return (
     <div className="container">
       {myTeam === null ? (
         <div>
           <h2>Select Your Team</h2>
-          {draftState.teamNames.map((name, index) => (
-            <button
-              key={index}
-              className="btn btn-primary me-2 mb-2"
-              onClick={() => assignTeam(index)}
-            >
-              {name}
-            </button>
-          ))}
+          {error ? (
+            <div className="alert alert-danger">{error}</div>
+          ) : isLoadingTeams ? (
+            <p>Loading teams...</p>
+          ) : draftState.teamNames.length === 0 ? (
+            <div className="alert alert-warning">No teams available for this league.</div>
+          ) : (
+            <div>
+              {draftState.teamNames.map((name, index) => (
+                <button
+                  key={index}
+                  className="btn btn-primary me-2 mb-2"
+                  onClick={() => assignTeam(index)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="row">
@@ -169,6 +211,12 @@ const Draft = () => {
                 disabled={draftState.isDrafting || draftState.draftComplete}
               >
                 Start Draft
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={resetTeamSelection}
+              >
+                Change Team
               </button>
             </div>
             {draftState.draftComplete && <div className="alert alert-success">Draft Complete! All teams are full.</div>}
