@@ -4,8 +4,8 @@ import io from 'socket.io-client';
 const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
 const Draft = () => {
-  const [players, setPlayers] = useState([]); // Original player list (unchanging)
-  const [sortedPlayers, setSortedPlayers] = useState([]); // Filtered list for display
+  const [players, setPlayers] = useState([]); // Original player list
+  const [sortedPlayers, setSortedPlayers] = useState([]); // Filtered list
   const [sortBy, setSortBy] = useState('owgr_rank');
   const [teams, setTeams] = useState([]);
   const [teamNames, setTeamNames] = useState([]);
@@ -18,7 +18,7 @@ const Draft = () => {
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
-  // Initialize socket connection
+  // Initialize socket
   useEffect(() => {
     const newSocket = io(API_BASE_URL, {
       reconnection: true,
@@ -46,7 +46,6 @@ const Draft = () => {
     if (!selectedLeague) return;
     setLeagueId(selectedLeague);
 
-    // Fetch player data
     fetch(`${API_BASE_URL}/field`)
       .then((res) => res.json())
       .then((fieldData) => {
@@ -70,28 +69,30 @@ const Draft = () => {
             });
 
             const sorted = [...playersWithRankings].sort((a, b) => a.owgr_rank - b.owgr_rank);
-            setPlayers(playersWithRankings); // Store original list
-            setSortedPlayers(sorted); // Set initial filtered list
+            setPlayers(playersWithRankings);
+            setSortedPlayers(sorted);
+            console.log('Initial sortedPlayers set:', sorted.length);
           });
       })
       .catch((err) => console.error('Error fetching player data:', err));
 
-    // Fetch league data
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
       .then((res) => res.json())
       .then((data) => {
         setTeams(data.teams);
         setTeamNames(data.teamNames);
+        console.log('Initial teams set:', data.teams);
       })
       .catch((err) => console.error('Error fetching league data:', err));
-  }, []); // Empty dependency array = runs once on mount
+  }, []);
 
   // Socket listener for draft updates
   useEffect(() => {
     if (!socket) return;
 
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
-      console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}`);
+      console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}, id=${player.id}`);
+
       if (updateLeagueId !== leagueId) {
         console.log(`Ignoring update: leagueId ${updateLeagueId} does not match ${leagueId}`);
         return;
@@ -109,12 +110,13 @@ const Draft = () => {
 
       // Remove player from sortedPlayers
       setSortedPlayers((prev) => {
+        console.log('Before filter - sortedPlayers:', prev.map(p => ({ id: p.id, name: p.name })));
         const updated = prev.filter((p) => p.id !== player.id);
-        console.log(`Removed ${player.name} from sortedPlayers. Remaining:`, updated.length);
+        console.log(`After filter - Removed ${player.name} (id=${player.id}). Remaining:`, updated.map(p => ({ id: p.id, name: p.name })));
         return updated;
       });
 
-      // Update current team (snake draft logic)
+      // Update current team
       setCurrentTeam((prev) => {
         let next = prev + snakeDirection;
         if (next >= teams.length) {
@@ -128,7 +130,7 @@ const Draft = () => {
         return next;
       });
 
-      // Check if draft is complete
+      // Check draft completion
       setDraftComplete((prev) => {
         const tempTeams = [...teams];
         if (!tempTeams[teamIndex].some((p) => p.id === player.id)) {
@@ -143,20 +145,23 @@ const Draft = () => {
     return () => {
       socket.off('draft-update');
     };
-  }, [socket, teams.length, snakeDirection, leagueId]); // Dependencies only for socket and draft state
+  }, [socket, teams.length, snakeDirection, leagueId]);
 
   const handleDraftPlayer = (playerIndex) => {
     if (!isDrafting || draftComplete || currentTeam === null || !socket) return;
 
     const player = sortedPlayers[playerIndex];
-    console.log(`Emitting draft-pick: leagueId=${leagueId}, teamIndex=${currentTeam}, player=${player.name}`);
+    console.log(`Emitting draft-pick: leagueId=${leagueId}, teamIndex=${currentTeam}, player=${player.name}, id=${player.id}`);
     socket.emit('draft-pick', { leagueId, teamIndex: currentTeam, player });
   };
 
   const handleSort = (criteria) => {
     setSortBy(criteria);
-    const sorted = [...sortedPlayers].sort((a, b) => a[criteria] - b[criteria]); // Sort current filtered list
-    setSortedPlayers(sorted);
+    setSortedPlayers((prev) => {
+      const sorted = [...prev].sort((a, b) => a[criteria] - b[criteria]);
+      console.log('Sorted sortedPlayers by', criteria, ':', sorted.map(p => ({ id: p.id, name: p.name })));
+      return sorted;
+    });
   };
 
   return (
