@@ -95,7 +95,7 @@ const Draft = () => {
         return updated;
       });
 
-      setSortedPlayers((prev) => prev.filter((p) => p.id !== playerA.id));
+      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id)); // Fixed: playerA -> player
 
       setCurrentTeam((prev) => {
         let next = prev + snakeDirection;
