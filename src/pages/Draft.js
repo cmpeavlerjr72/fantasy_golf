@@ -48,7 +48,7 @@ const Draft = () => {
     }
     setLeagueId(selectedLeague);
 
-    // Clear local team selection on page load, but don't reset server-side assignments
+    // Clear local team selection on page load
     setMyTeam(null);
     localStorage.removeItem('myTeam');
     localStorage.removeItem('teamAssignedInSession');
@@ -84,7 +84,10 @@ const Draft = () => {
           ...prev,
           teams: data.teams || [],
           teamNames: data.teamNames || [],
-          draftComplete: data.teams.every((t) => t.length === 6),
+          currentTeam: data.currentTeam || 0,
+          snakeDirection: data.snakeDirection || 1,
+          isDrafting: data.isDrafting || false,
+          draftComplete: data.draftComplete || false,
         }));
         setIsLoadingTeams(false);
       })
@@ -94,7 +97,7 @@ const Draft = () => {
         setIsLoadingTeams(false);
       });
 
-    // Emit an event to check if this is the first client joining the draft
+    // Emit an event to check the draft state
     if (socket) {
       socket.emit('join-draft', { leagueId: selectedLeague });
     }
@@ -105,24 +108,20 @@ const Draft = () => {
     if (!socket || !leagueId) return;
 
     // Handle response from join-draft event
-    socket.on('draft-status', ({ isFirstClient, draftComplete }) => {
-      if (isFirstClient) {
-        // If this is the first client, reset the draft state
-        setDraftState((prev) => ({
-          ...prev,
-          isDrafting: false,
-          draftComplete: draftComplete,
-          currentTeam: 0,
-          snakeDirection: 1,
-          teams: prev.teams.map(() => []),
-        }));
-      } else {
-        // If not the first client, update draftComplete status
-        setDraftState((prev) => ({
-          ...prev,
-          draftComplete: draftComplete,
-        }));
+    socket.on('draft-status', (draftStatus) => {
+      if (draftStatus.error) {
+        setError(draftStatus.error);
+        return;
       }
+
+      setDraftState((prev) => ({
+        ...prev,
+        teams: draftStatus.teams || prev.teams,
+        currentTeam: draftStatus.currentTeam || 0,
+        snakeDirection: draftStatus.snakeDirection || 1,
+        isDrafting: draftStatus.isDrafting || false,
+        draftComplete: draftStatus.draftComplete || false,
+      }));
     });
 
     if (myTeam !== null) {
@@ -147,53 +146,30 @@ const Draft = () => {
       resetTeamSelection();
       setDraftState((prev) => ({
         ...prev,
-        isDrafting: false,
-        draftComplete: false,
+        teams: prev.teams.map(() => []),
         currentTeam: 0,
         snakeDirection: 1,
-        teams: prev.teams.map(() => []),
+        isDrafting: false,
+        draftComplete: false,
       }));
     });
 
-    socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
-      console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}, id=${player.id}`);
+    socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player, teams, currentTeam, snakeDirection, isDrafting, draftComplete }) => {
+      console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player?.name || 'unknown'}`);
       if (updateLeagueId !== leagueId) return;
 
       setDraftState((prev) => {
-        const updatedTeams = [...prev.teams];
-        if (!updatedTeams[teamIndex].some((p) => p.id === player.id)) {
-          updatedTeams[teamIndex] = [...updatedTeams[teamIndex], player];
-        }
-        const updatedPlayers = prev.sortedPlayers.filter((p) => p.id !== player.id);
-        let nextTeam = prev.currentTeam + prev.snakeDirection;
-        if (nextTeam >= prev.teams.length) {
-          nextTeam = prev.teams.length - 1;
-          return {
-            ...prev,
-            teams: updatedTeams,
-            sortedPlayers: updatedPlayers,
-            currentTeam: nextTeam,
-            snakeDirection: -1,
-            draftComplete: updatedTeams.every((t) => t.length === 6),
-          };
-        } else if (nextTeam < 0) {
-          nextTeam = 0;
-          return {
-            ...prev,
-            teams: updatedTeams,
-            sortedPlayers: updatedPlayers,
-            currentTeam: nextTeam,
-            snakeDirection: 1,
-            draftComplete: updatedTeams.every((t) => t.length === 6),
-          };
-        }
+        const updatedTeams = teams || prev.teams;
+        const updatedPlayers = prev.sortedPlayers.filter((p) => p.id !== player?.id);
         console.log('Updated sortedPlayers:', updatedPlayers.map(p => ({ id: p.id, name: p.name })));
         return {
           ...prev,
           teams: updatedTeams,
           sortedPlayers: updatedPlayers,
-          currentTeam: nextTeam,
-          draftComplete: updatedTeams.every((t) => t.length === 6),
+          currentTeam: currentTeam || 0,
+          snakeDirection: snakeDirection || 1,
+          isDrafting: isDrafting || false,
+          draftComplete: draftComplete || false,
         };
       });
     });
@@ -226,7 +202,6 @@ const Draft = () => {
 
   const assignTeam = (teamIndex) => {
     setMyTeam(teamIndex);
-    setDraftState((prev) => ({ ...prev, isDrafting: true }));
   };
 
   const resetTeamSelection = () => {
@@ -237,10 +212,7 @@ const Draft = () => {
   };
 
   const handleStartDraft = () => {
-    setDraftState((prev) => ({
-      ...prev,
-      isDrafting: true,
-    }));
+    socket.emit('start-draft', { leagueId });
   };
 
   const handlePinSubmit = (e) => {
@@ -371,7 +343,7 @@ const Draft = () => {
                 className={`mb-4 p-2 rounded ${draftState.currentTeam === teamIndex ? 'active-team' : ''}`}
                 style={
                   draftState.currentTeam === teamIndex
-                    ? { backgroundColor: '#4a90e2' } // Blue highlight for active team
+                    ? { backgroundColor: '#4a90e2' }
                     : {}
                 }
               >
