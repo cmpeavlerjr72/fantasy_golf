@@ -37,7 +37,7 @@ const Draft = () => {
     };
   }, []);
 
-  // Fetch initial data (players and league info)
+  // Fetch initial data and clear cache on page load
   useEffect(() => {
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (!selectedLeague) {
@@ -46,6 +46,23 @@ const Draft = () => {
       return;
     }
     setLeagueId(selectedLeague);
+
+    // Clear team selection and reset draft state on page load
+    setMyTeam(null);
+    localStorage.removeItem('myTeam');
+    localStorage.removeItem('teamAssignedInSession');
+    setDraftState((prev) => ({
+      ...prev,
+      isDrafting: false,
+      draftComplete: false,
+      currentTeam: 0,
+      snakeDirection: 1,
+      teams: prev.teams.map(() => []), // Reset teams to empty arrays
+    }));
+    // Notify server to clear team ownership
+    if (socket) {
+      socket.emit('start-draft', { leagueId: selectedLeague });
+    }
 
     fetch(`${API_BASE_URL}/field`)
       .then((res) => res.json())
@@ -82,15 +99,7 @@ const Draft = () => {
         setError('Failed to load league data.');
         setIsLoadingTeams(false);
       });
-
-    const storedTeam = localStorage.getItem('myTeam');
-    if (storedTeam !== null && localStorage.getItem('teamAssignedInSession')) {
-      setMyTeam(parseInt(storedTeam, 10));
-    } else {
-      localStorage.removeItem('myTeam');
-      localStorage.removeItem('teamAssignedInSession');
-    }
-  }, []);
+  }, [socket]);
 
   // Handle socket events (team assignment, draft updates, and draft reset)
   useEffect(() => {
@@ -103,8 +112,10 @@ const Draft = () => {
     socket.on('team-assigned', ({ success, message }) => {
       if (!success) {
         console.log('Team assignment failed:', message);
-        setError(message);
-        resetTeamSelection();
+        setError(message); // Display the error message (e.g., "Team already taken by another user.")
+        resetTeamSelection(); // Reset team selection to show the team selection screen again
+      } else {
+        setError(null); // Clear any previous error if assignment succeeds
       }
     });
 
@@ -192,7 +203,7 @@ const Draft = () => {
 
   const assignTeam = (teamIndex) => {
     setMyTeam(teamIndex);
-    setDraftState((prev) => ({ ...prev, isDrafting: true })); // Start drafting after team selection
+    setDraftState((prev) => ({ ...prev, isDrafting: true }));
   };
 
   const resetTeamSelection = () => {
@@ -202,20 +213,10 @@ const Draft = () => {
   };
 
   const handleStartDraft = () => {
-    // Clear team selection and reset draft state
-    resetTeamSelection();
     setDraftState((prev) => ({
       ...prev,
-      isDrafting: false,
-      draftComplete: false,
-      currentTeam: 0,
-      snakeDirection: 1,
-      teams: prev.teams.map(() => []),
+      isDrafting: true,
     }));
-    // Notify server to clear team ownership
-    if (socket) {
-      socket.emit('start-draft', { leagueId });
-    }
   };
 
   return (
@@ -223,9 +224,8 @@ const Draft = () => {
       {myTeam === null ? (
         <div>
           <h2>Select Your Team</h2>
-          {error ? (
-            <div className="alert alert-danger">{error}</div>
-          ) : isLoadingTeams ? (
+          {error && <div className="alert alert-danger">{error}</div>} {/* Display error message if team is taken */}
+          {isLoadingTeams ? (
             <p>Loading teams...</p>
           ) : draftState.teamNames.length === 0 ? (
             <div className="alert alert-warning">No teams available for this league.</div>
