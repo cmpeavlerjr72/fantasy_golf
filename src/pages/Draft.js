@@ -130,24 +130,32 @@ const Draft = () => {
 
           {confirmedTeamIndex == null && (
             <div className="mb-3">
-              <label htmlFor="teamSelect" className="form-label">Select your team:</label>
-              <select
-                id="teamSelect"
-                className="form-select"
-                value={selectedTeamIndex || ''}
-                onChange={(e) => setSelectedTeamIndex(Number(e.target.value))}
+            <label htmlFor="teamSelect" className="form-label">Your Team:</label>
+            <select
+              id="teamSelect"
+              className="form-select"
+              value={confirmedTeamIndex !== null ? confirmedTeamIndex : selectedTeamIndex || ''}
+              onChange={(e) => setSelectedTeamIndex(Number(e.target.value))}
+              disabled={confirmedTeamIndex !== null} // freeze after confirmation
+            >
+              <option value="" disabled>Select team...</option>
+              {teamNames.map((name, index) => (
+                <option key={index} value={index}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          
+            {confirmedTeamIndex === null && (
+              <button
+                className="btn btn-success mt-2"
+                onClick={confirmTeam}
+                disabled={selectedTeamIndex === null}
               >
-                <option value="" disabled>Select team...</option>
-                {teamNames.map((name, index) => (
-                  <option key={index} value={index}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-success mt-2" onClick={confirmTeam} disabled={selectedTeamIndex === null}>
                 Confirm
               </button>
-            </div>
+            )}
+          </div>
           )}
 
           <div className="mb-3">
