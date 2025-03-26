@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('https://golf-server-0fea.onrender.com'); // Adjust if needed
+const socket = io('https://golf-server-0fea.onrender.com'); // Update if needed
 
 const Draft = () => {
   const [players, setPlayers] = useState([]);
@@ -14,6 +14,12 @@ const Draft = () => {
   const [draftComplete, setDraftComplete] = useState(false);
   const [snakeDirection, setSnakeDirection] = useState(1);
   const [leagueId, setLeagueId] = useState('');
+  const [selectedTeamIndex, setSelectedTeamIndex] = useState(null);
+  const [confirmedTeamIndex, setConfirmedTeamIndex] = useState(
+    localStorage.getItem('confirmedTeamIndex') !== null
+      ? parseInt(localStorage.getItem('confirmedTeamIndex'))
+      : null
+  );
 
   const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
@@ -72,10 +78,8 @@ const Draft = () => {
 
       setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id));
 
-      // Update turn and direction
       setCurrentTeam((prevTeam) => {
         const next = snakeDirection === 1 ? prevTeam + 1 : prevTeam - 1;
-
         if (next >= teams.length) {
           setSnakeDirection(-1);
           return teams.length - 1;
@@ -87,7 +91,6 @@ const Draft = () => {
         }
       });
 
-      // Check if draft is done
       setDraftComplete((prev) => {
         const tempTeams = [...teams];
         tempTeams[teamIndex].push(player);
@@ -95,14 +98,11 @@ const Draft = () => {
       });
     });
 
-    return () => {
-      socket.off('draft-update');
-    };
+    return () => socket.off('draft-update');
   }, [snakeDirection, teams.length]);
 
   const handleDraftPlayer = (playerIndex) => {
-    if (!isDrafting || draftComplete || currentTeam === null) return;
-
+    if (!isDrafting || draftComplete || currentTeam !== confirmedTeamIndex) return;
     const player = sortedPlayers[playerIndex];
     socket.emit('draft-pick', {
       leagueId,
@@ -117,11 +117,39 @@ const Draft = () => {
     setSortedPlayers(sorted);
   };
 
+  const confirmTeam = () => {
+    setConfirmedTeamIndex(selectedTeamIndex);
+    localStorage.setItem('confirmedTeamIndex', selectedTeamIndex);
+  };
+
   return (
     <div className="container">
       <div className="row">
         <div className="col-md-6">
           <h2>Draft Your Team</h2>
+
+          {!confirmedTeamIndex && (
+            <div className="mb-3">
+              <label htmlFor="teamSelect" className="form-label">Select your team:</label>
+              <select
+                id="teamSelect"
+                className="form-select"
+                value={selectedTeamIndex || ''}
+                onChange={(e) => setSelectedTeamIndex(Number(e.target.value))}
+              >
+                <option value="" disabled>Select team...</option>
+                {teamNames.map((name, index) => (
+                  <option key={index} value={index}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <button className="btn btn-success mt-2" onClick={confirmTeam} disabled={selectedTeamIndex === null}>
+                Confirm
+              </button>
+            </div>
+          )}
+
           <div className="mb-3">
             <button
               className="btn btn-primary me-2"
@@ -167,7 +195,10 @@ const Draft = () => {
                 <tr
                   key={index}
                   onClick={() => handleDraftPlayer(index)}
-                  style={{ cursor: 'pointer' }}
+                  style={{
+                    cursor: confirmedTeamIndex === currentTeam && isDrafting && !draftComplete ? 'pointer' : 'not-allowed',
+                    opacity: confirmedTeamIndex === currentTeam && isDrafting && !draftComplete ? 1 : 0.5
+                  }}
                 >
                   <td>{player.owgr_rank}</td>
                   <td>{player.dg_rank}</td>
