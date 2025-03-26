@@ -20,6 +20,7 @@ const Draft = () => {
   const [myTeam, setMyTeam] = useState(null);
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
   const [error, setError] = useState(null);
+  const [pinInput, setPinInput] = useState(''); // State for the PIN input
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
@@ -91,7 +92,12 @@ const Draft = () => {
       })
       .then((data) => {
         console.log('Draft fetched league data:', data);
-        setDraftState((prev) => ({ ...prev, teams: data.teams || [], teamNames: data.teamNames || [] }));
+        setDraftState((prev) => ({
+          ...prev,
+          teams: data.teams || [],
+          teamNames: data.teamNames || [],
+          draftComplete: data.teams.every((t) => t.length === 6), // Check if draft is complete
+        }));
         setIsLoadingTeams(false);
       })
       .catch((err) => {
@@ -113,7 +119,7 @@ const Draft = () => {
       if (!success) {
         console.log('Team assignment failed:', message);
         setError(message); // Display the error message (e.g., "Team already taken by another user.")
-        resetTeamSelection(); // Reset team selection to show the team selection screen again
+        resetTeamSelection(); // Reset team selection to show the PIN input again
       } else {
         setError(null); // Clear any previous error if assignment succeeds
       }
@@ -210,6 +216,7 @@ const Draft = () => {
     setMyTeam(null);
     localStorage.removeItem('myTeam');
     localStorage.removeItem('teamAssignedInSession');
+    setPinInput(''); // Clear the PIN input
   };
 
   const handleStartDraft = () => {
@@ -219,27 +226,67 @@ const Draft = () => {
     }));
   };
 
+  const handlePinSubmit = (e) => {
+    e.preventDefault();
+    // Validate the PIN: must be a two-digit number like "01", "02", etc.
+    if (!/^\d{2}$/.test(pinInput)) {
+      setError('Please enter a valid two-digit PIN (e.g., "01", "02").');
+      return;
+    }
+
+    const teamIndex = parseInt(pinInput, 10) - 1; // Convert PIN to team index (e.g., "01" -> 0, "02" -> 1)
+    if (teamIndex < 0 || teamIndex >= draftState.teamNames.length) {
+      setError(`Invalid PIN. Please enter a PIN between "01" and "${draftState.teamNames.length.toString().padStart(2, '0')}".`);
+      return;
+    }
+
+    setError(null); // Clear any previous error
+    assignTeam(teamIndex); // Assign the team based on the PIN
+  };
+
   return (
     <div className="container">
       {myTeam === null ? (
         <div>
           <h2>Select Your Team</h2>
-          {error && <div className="alert alert-danger">{error}</div>} {/* Display error message if team is taken */}
+          {error && <div className="alert alert-danger">{error}</div>}
           {isLoadingTeams ? (
             <p>Loading teams...</p>
           ) : draftState.teamNames.length === 0 ? (
             <div className="alert alert-warning">No teams available for this league.</div>
+          ) : draftState.draftComplete ? (
+            <div className="alert alert-success">
+              Draft is already complete! You cannot modify the teams.
+            </div>
           ) : (
             <div>
-              {draftState.teamNames.map((name, index) => (
-                <button
-                  key={index}
-                  className="btn btn-primary me-2 mb-2"
-                  onClick={() => assignTeam(index)}
-                >
-                  {name}
+              <p>Available teams:</p>
+              <ul>
+                {draftState.teamNames.map((name, index) => (
+                  <li key={index}>
+                    PIN: {(index + 1).toString().padStart(2, '0')} - Team: {name}
+                  </li>
+                ))}
+              </ul>
+              <form onSubmit={handlePinSubmit}>
+                <div className="mb-3">
+                  <label htmlFor="pinInput" className="form-label">
+                    Enter your team PIN (e.g., "01" for {draftState.teamNames[0]})
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="pinInput"
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="Enter PIN (e.g., 01)"
+                    maxLength="2"
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Submit PIN
                 </button>
-              ))}
+              </form>
             </div>
           )}
         </div>
