@@ -18,8 +18,8 @@ const Draft = () => {
   const [socket, setSocket] = useState(null);
   const [sortBy, setSortBy] = useState('owgr_rank');
   const [myTeam, setMyTeam] = useState(null);
-  const [isLoadingTeams, setIsLoadingTeams] = useState(true); // Add loading state
-  const [error, setError] = useState(null); // Add error state
+  const [isLoadingTeams, setIsLoadingTeams] = useState(true);
+  const [error, setError] = useState(null);
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
@@ -45,7 +45,6 @@ const Draft = () => {
     }
     setLeagueId(selectedLeague);
 
-    // Fetch player data
     fetch(`${API_BASE_URL}/field`)
       .then((res) => res.json())
       .then((fieldData) => {
@@ -66,7 +65,6 @@ const Draft = () => {
         setError('Failed to load player data.');
       });
 
-    // Fetch league data
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
       .then((res) => {
         if (!res.ok) throw new Error('Failed to fetch league data');
@@ -83,12 +81,10 @@ const Draft = () => {
         setIsLoadingTeams(false);
       });
 
-    // Only set myTeam if explicitly assigned in this session
     const storedTeam = localStorage.getItem('myTeam');
     if (storedTeam !== null && localStorage.getItem('teamAssignedInSession')) {
       setMyTeam(parseInt(storedTeam, 10));
     } else {
-      // Clear any previous team assignment to force selection
       localStorage.removeItem('myTeam');
       localStorage.removeItem('teamAssignedInSession');
     }
@@ -99,7 +95,15 @@ const Draft = () => {
 
     socket.emit('assign-team', { leagueId, teamIndex: myTeam });
     localStorage.setItem('myTeam', myTeam.toString());
-    localStorage.setItem('teamAssignedInSession', 'true'); // Mark that team was assigned in this session
+    localStorage.setItem('teamAssignedInSession', 'true');
+
+    socket.on('team-assigned', ({ success, message }) => {
+      if (!success) {
+        console.log('Team assignment failed:', message);
+        setError(message);
+        resetTeamSelection();
+      }
+    });
 
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}, id=${player.id}`);
@@ -144,7 +148,10 @@ const Draft = () => {
       });
     });
 
-    return () => socket.off('draft-update');
+    return () => {
+      socket.off('draft-update');
+      socket.off('team-assigned');
+    };
   }, [socket, leagueId, myTeam]);
 
   const handleDraftPlayer = (playerIndex) => {
@@ -173,6 +180,23 @@ const Draft = () => {
     setMyTeam(null);
     localStorage.removeItem('myTeam');
     localStorage.removeItem('teamAssignedInSession');
+  };
+
+  const handleStartDraft = () => {
+    // Clear team selection and reset draft state
+    resetTeamSelection();
+    setDraftState((prev) => ({
+      ...prev,
+      isDrafting: false, // Ensure isDrafting is false until team is selected
+      draftComplete: false,
+      currentTeam: 0,
+      snakeDirection: 1,
+      teams: prev.teams.map(() => []), // Reset teams to empty arrays
+    }));
+    // Notify server to clear team ownership
+    if (socket) {
+      socket.emit('start-draft', { leagueId });
+    }
   };
 
   return (
@@ -207,7 +231,7 @@ const Draft = () => {
             <div className="mb-3">
               <button
                 className="btn btn-primary me-2"
-                onClick={() => setDraftState((prev) => ({ ...prev, isDrafting: true }))}
+                onClick={handleStartDraft}
                 disabled={draftState.isDrafting || draftState.draftComplete}
               >
                 Start Draft
