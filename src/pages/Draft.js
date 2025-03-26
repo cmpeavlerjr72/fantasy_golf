@@ -16,7 +16,6 @@ const Draft = () => {
   const [leagueId, setLeagueId] = useState('');
 
   const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
-
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
   useEffect(() => {
@@ -24,7 +23,7 @@ const Draft = () => {
     if (!selectedLeague) return;
     setLeagueId(selectedLeague);
 
-    // Fetch player data
+    // Fetch players
     fetch(`${API_BASE_URL}/field`)
       .then((res) => res.json())
       .then((fieldData) => {
@@ -53,7 +52,7 @@ const Draft = () => {
           });
       });
 
-    // Fetch league data
+    // Fetch teams and team names
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
       .then((res) => res.json())
       .then((data) => {
@@ -61,32 +60,54 @@ const Draft = () => {
         setTeamNames(data.teamNames);
       });
 
-    // Listen for socket draft updates
-    socket.on('updateDraft', ({ teams, sortedPlayers, currentTeam, snakeDirection, draftComplete }) => {
-      setTeams(teams);
-      setSortedPlayers(sortedPlayers);
-      setCurrentTeam(currentTeam);
-      setSnakeDirection(snakeDirection);
-      setDraftComplete(draftComplete);
+    // Socket listener
+    socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
+      if (updateLeagueId !== selectedLeague) return;
+
+      setTeams((prevTeams) => {
+        const updated = [...prevTeams];
+        updated[teamIndex] = [...updated[teamIndex], player];
+        return updated;
+      });
+
+      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id));
+
+      // Update turn and direction
+      setCurrentTeam((prevTeam) => {
+        const next = snakeDirection === 1 ? prevTeam + 1 : prevTeam - 1;
+
+        if (next >= teams.length) {
+          setSnakeDirection(-1);
+          return teams.length - 1;
+        } else if (next < 0) {
+          setSnakeDirection(1);
+          return 0;
+        } else {
+          return next;
+        }
+      });
+
+      // Check if draft is done
+      setDraftComplete((prev) => {
+        const tempTeams = [...teams];
+        tempTeams[teamIndex].push(player);
+        return tempTeams.every((team) => team.length === 6);
+      });
     });
 
     return () => {
-      socket.off('updateDraft');
+      socket.off('draft-update');
     };
-  }, []);
+  }, [snakeDirection, teams.length]);
 
   const handleDraftPlayer = (playerIndex) => {
     if (!isDrafting || draftComplete || currentTeam === null) return;
 
     const player = sortedPlayers[playerIndex];
-    socket.emit('draftPlayer', {
+    socket.emit('draft-pick', {
       leagueId,
+      teamIndex: currentTeam,
       player,
-      currentTeam,
-      sortedPlayers,
-      teams,
-      teamNames,
-      snakeDirection,
     });
   };
 
@@ -143,7 +164,11 @@ const Draft = () => {
             </thead>
             <tbody>
               {sortedPlayers.map((player, index) => (
-                <tr key={index} onClick={() => handleDraftPlayer(index)} style={{ cursor: 'pointer' }}>
+                <tr
+                  key={index}
+                  onClick={() => handleDraftPlayer(index)}
+                  style={{ cursor: 'pointer' }}
+                >
                   <td>{player.owgr_rank}</td>
                   <td>{player.dg_rank}</td>
                   <td>{player.name}</td>
