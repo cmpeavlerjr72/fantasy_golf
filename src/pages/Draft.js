@@ -4,8 +4,8 @@ import io from 'socket.io-client';
 const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
 const Draft = () => {
-  const [players, setPlayers] = useState([]);
-  const [sortedPlayers, setSortedPlayers] = useState([]);
+  const [players, setPlayers] = useState([]); // Original player list (unchanging)
+  const [sortedPlayers, setSortedPlayers] = useState([]); // Filtered list for display
   const [sortBy, setSortBy] = useState('owgr_rank');
   const [teams, setTeams] = useState([]);
   const [teamNames, setTeamNames] = useState([]);
@@ -25,6 +25,12 @@ const Draft = () => {
       reconnectionAttempts: Infinity,
       reconnectionDelay: 1000,
     });
+    newSocket.on('connect', () => {
+      console.log('Socket connected successfully');
+    });
+    newSocket.on('connect_error', (err) => {
+      console.log('Socket connection error:', err.message);
+    });
     setSocket(newSocket);
     console.log('Socket initialized');
 
@@ -34,10 +40,8 @@ const Draft = () => {
     };
   }, []);
 
-  // Fetch data and set up socket listener
+  // Fetch initial data (runs once)
   useEffect(() => {
-    if (!socket) return;
-
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (!selectedLeague) return;
     setLeagueId(selectedLeague);
@@ -66,8 +70,8 @@ const Draft = () => {
             });
 
             const sorted = [...playersWithRankings].sort((a, b) => a.owgr_rank - b.owgr_rank);
-            setPlayers(playersWithRankings);
-            setSortedPlayers(sorted);
+            setPlayers(playersWithRankings); // Store original list
+            setSortedPlayers(sorted); // Set initial filtered list
           });
       })
       .catch((err) => console.error('Error fetching player data:', err));
@@ -80,23 +84,37 @@ const Draft = () => {
         setTeamNames(data.teamNames);
       })
       .catch((err) => console.error('Error fetching league data:', err));
+  }, []); // Empty dependency array = runs once on mount
 
-    // Socket listener for draft updates
+  // Socket listener for draft updates
+  useEffect(() => {
+    if (!socket) return;
+
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}`);
-      if (updateLeagueId !== selectedLeague) {
-        console.log(`Ignoring update: leagueId ${updateLeagueId} does not match ${selectedLeague}`);
+      if (updateLeagueId !== leagueId) {
+        console.log(`Ignoring update: leagueId ${updateLeagueId} does not match ${leagueId}`);
         return;
       }
 
+      // Update teams
       setTeams((prev) => {
         const updated = [...prev];
-        updated[teamIndex] = [...updated[teamIndex], player];
+        if (!updated[teamIndex].some((p) => p.id === player.id)) {
+          updated[teamIndex] = [...updated[teamIndex], player];
+        }
+        console.log('Updated teams:', updated);
         return updated;
       });
 
-      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id)); // Fixed: playerA -> player
+      // Remove player from sortedPlayers
+      setSortedPlayers((prev) => {
+        const updated = prev.filter((p) => p.id !== player.id);
+        console.log(`Removed ${player.name} from sortedPlayers. Remaining:`, updated.length);
+        return updated;
+      });
 
+      // Update current team (snake draft logic)
       setCurrentTeam((prev) => {
         let next = prev + snakeDirection;
         if (next >= teams.length) {
@@ -106,20 +124,26 @@ const Draft = () => {
           setSnakeDirection(1);
           next = 0;
         }
+        console.log('Updated currentTeam:', next);
         return next;
       });
 
+      // Check if draft is complete
       setDraftComplete((prev) => {
         const tempTeams = [...teams];
-        tempTeams[teamIndex].push(player);
-        return tempTeams.every((t) => t.length === 6);
+        if (!tempTeams[teamIndex].some((p) => p.id === player.id)) {
+          tempTeams[teamIndex].push(player);
+        }
+        const complete = tempTeams.every((t) => t.length === 6);
+        console.log('Draft complete:', complete);
+        return complete;
       });
     });
 
     return () => {
       socket.off('draft-update');
     };
-  }, [socket, snakeDirection, teams.length]);
+  }, [socket, teams.length, snakeDirection, leagueId]); // Dependencies only for socket and draft state
 
   const handleDraftPlayer = (playerIndex) => {
     if (!isDrafting || draftComplete || currentTeam === null || !socket) return;
@@ -131,7 +155,7 @@ const Draft = () => {
 
   const handleSort = (criteria) => {
     setSortBy(criteria);
-    const sorted = [...players].sort((a, b) => a[criteria] - b[criteria]);
+    const sorted = [...sortedPlayers].sort((a, b) => a[criteria] - b[criteria]); // Sort current filtered list
     setSortedPlayers(sorted);
   };
 
@@ -181,10 +205,10 @@ const Draft = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedPlayers.map((player, index) => (
+              {sortedPlayers.map((player) => (
                 <tr
-                  key={index}
-                  onClick={() => handleDraftPlayer(index)}
+                  key={player.id}
+                  onClick={() => handleDraftPlayer(sortedPlayers.findIndex((p) => p.id === player.id))}
                   style={{ cursor: 'pointer' }}
                 >
                   <td>{player.owgr_rank}</td>
@@ -202,8 +226,8 @@ const Draft = () => {
             <div key={teamIndex} className={`mb-4 ${currentTeam === teamIndex ? 'bg-light' : ''}`}>
               <h5>{teamNames[teamIndex]}</h5>
               <ul className="list-group">
-                {team.map((player, index) => (
-                  <li key={index} className="list-group-item">
+                {team.map((player) => (
+                  <li key={player.id} className="list-group-item">
                     {player.name}
                   </li>
                 ))}
