@@ -20,7 +20,7 @@ const Draft = () => {
   const [myTeam, setMyTeam] = useState(null);
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
   const [error, setError] = useState(null);
-  const [pinInput, setPinInput] = useState(''); // State for the PIN input
+  const [pinInput, setPinInput] = useState('');
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
@@ -38,7 +38,7 @@ const Draft = () => {
     };
   }, []);
 
-  // Fetch initial data and clear cache on page load
+  // Fetch initial data and check draft status
   useEffect(() => {
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (!selectedLeague) {
@@ -48,22 +48,10 @@ const Draft = () => {
     }
     setLeagueId(selectedLeague);
 
-    // Clear team selection and reset draft state on page load
+    // Clear local team selection on page load, but don't reset server-side assignments
     setMyTeam(null);
     localStorage.removeItem('myTeam');
     localStorage.removeItem('teamAssignedInSession');
-    setDraftState((prev) => ({
-      ...prev,
-      isDrafting: false,
-      draftComplete: false,
-      currentTeam: 0,
-      snakeDirection: 1,
-      teams: prev.teams.map(() => []), // Reset teams to empty arrays
-    }));
-    // Notify server to clear team ownership
-    if (socket) {
-      socket.emit('start-draft', { leagueId: selectedLeague });
-    }
 
     fetch(`${API_BASE_URL}/field`)
       .then((res) => res.json())
@@ -96,7 +84,7 @@ const Draft = () => {
           ...prev,
           teams: data.teams || [],
           teamNames: data.teamNames || [],
-          draftComplete: data.teams.every((t) => t.length === 6), // Check if draft is complete
+          draftComplete: data.teams.every((t) => t.length === 6),
         }));
         setIsLoadingTeams(false);
       })
@@ -105,23 +93,51 @@ const Draft = () => {
         setError('Failed to load league data.');
         setIsLoadingTeams(false);
       });
+
+    // Emit an event to check if this is the first client joining the draft
+    if (socket) {
+      socket.emit('join-draft', { leagueId: selectedLeague });
+    }
   }, [socket]);
 
-  // Handle socket events (team assignment, draft updates, and draft reset)
+  // Handle socket events
   useEffect(() => {
-    if (!socket || !leagueId || myTeam === null) return;
+    if (!socket || !leagueId) return;
 
-    socket.emit('assign-team', { leagueId, teamIndex: myTeam });
-    localStorage.setItem('myTeam', myTeam.toString());
-    localStorage.setItem('teamAssignedInSession', 'true');
+    // Handle response from join-draft event
+    socket.on('draft-status', ({ isFirstClient, draftComplete }) => {
+      if (isFirstClient) {
+        // If this is the first client, reset the draft state
+        setDraftState((prev) => ({
+          ...prev,
+          isDrafting: false,
+          draftComplete: draftComplete,
+          currentTeam: 0,
+          snakeDirection: 1,
+          teams: prev.teams.map(() => []),
+        }));
+      } else {
+        // If not the first client, update draftComplete status
+        setDraftState((prev) => ({
+          ...prev,
+          draftComplete: draftComplete,
+        }));
+      }
+    });
+
+    if (myTeam !== null) {
+      socket.emit('assign-team', { leagueId, teamIndex: myTeam });
+      localStorage.setItem('myTeam', myTeam.toString());
+      localStorage.setItem('teamAssignedInSession', 'true');
+    }
 
     socket.on('team-assigned', ({ success, message }) => {
       if (!success) {
         console.log('Team assignment failed:', message);
-        setError(message); // Display the error message (e.g., "Team already taken by another user.")
-        resetTeamSelection(); // Reset team selection to show the PIN input again
+        setError(message);
+        resetTeamSelection();
       } else {
-        setError(null); // Clear any previous error if assignment succeeds
+        setError(null);
       }
     });
 
@@ -183,6 +199,7 @@ const Draft = () => {
     });
 
     return () => {
+      socket.off('draft-status');
       socket.off('draft-update');
       socket.off('team-assigned');
       socket.off('draft-reset');
@@ -216,7 +233,7 @@ const Draft = () => {
     setMyTeam(null);
     localStorage.removeItem('myTeam');
     localStorage.removeItem('teamAssignedInSession');
-    setPinInput(''); // Clear the PIN input
+    setPinInput('');
   };
 
   const handleStartDraft = () => {
@@ -228,20 +245,19 @@ const Draft = () => {
 
   const handlePinSubmit = (e) => {
     e.preventDefault();
-    // Validate the PIN: must be a two-digit number like "01", "02", etc.
     if (!/^\d{2}$/.test(pinInput)) {
       setError('Please enter a valid two-digit PIN (e.g., "01", "02").');
       return;
     }
 
-    const teamIndex = parseInt(pinInput, 10) - 1; // Convert PIN to team index (e.g., "01" -> 0, "02" -> 1)
+    const teamIndex = parseInt(pinInput, 10) - 1;
     if (teamIndex < 0 || teamIndex >= draftState.teamNames.length) {
       setError(`Invalid PIN. Please enter a PIN between "01" and "${draftState.teamNames.length.toString().padStart(2, '0')}".`);
       return;
     }
 
-    setError(null); // Clear any previous error
-    assignTeam(teamIndex); // Assign the team based on the PIN
+    setError(null);
+    assignTeam(teamIndex);
   };
 
   return (
