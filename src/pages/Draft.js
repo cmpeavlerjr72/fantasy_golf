@@ -5,8 +5,8 @@ const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
 const Draft = () => {
   const [draftState, setDraftState] = useState({
-    players: [], // Original list
-    sortedPlayers: [], // Available players
+    players: [],
+    sortedPlayers: [],
     teams: [],
     teamNames: [],
     currentTeam: 0,
@@ -17,6 +17,7 @@ const Draft = () => {
   const [leagueId, setLeagueId] = useState('');
   const [socket, setSocket] = useState(null);
   const [sortBy, setSortBy] = useState('owgr_rank');
+  const [myTeam, setMyTeam] = useState(null); // Client's team index
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
@@ -57,10 +58,22 @@ const Draft = () => {
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
       .then((res) => res.json())
       .then((data) => setDraftState((prev) => ({ ...prev, teams: data.teams, teamNames: data.teamNames })));
+
+    // Check for existing team assignment
+    const storedTeam = localStorage.getItem('myTeam');
+    if (storedTeam !== null) {
+      setMyTeam(parseInt(storedTeam, 10));
+    }
   }, []);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !leagueId) return;
+
+    // Send team assignment to server when myTeam is set
+    if (myTeam !== null) {
+      socket.emit('assign-team', { leagueId, teamIndex: myTeam });
+      localStorage.setItem('myTeam', myTeam.toString());
+    }
 
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}, id=${player.id}`);
@@ -106,10 +119,13 @@ const Draft = () => {
     });
 
     return () => socket.off('draft-update');
-  }, [socket, leagueId]);
+  }, [socket, leagueId, myTeam]);
 
   const handleDraftPlayer = (playerIndex) => {
-    if (!draftState.isDrafting || draftState.draftComplete || draftState.currentTeam === null || !socket) return;
+    if (!draftState.isDrafting || draftState.draftComplete || myTeam === null || myTeam !== draftState.currentTeam || !socket) {
+      console.log('Draft blocked: Not your turn or invalid state');
+      return;
+    }
     const player = draftState.sortedPlayers[playerIndex];
     console.log(`Emitting draft-pick: leagueId=${leagueId}, teamIndex=${draftState.currentTeam}, player=${player.name}`);
     socket.emit('draft-pick', { leagueId, teamIndex: draftState.currentTeam, player });
@@ -123,71 +139,93 @@ const Draft = () => {
     }));
   };
 
+  const assignTeam = (teamIndex) => {
+    setMyTeam(teamIndex);
+  };
+
   return (
     <div className="container">
-      <div className="row">
-        <div className="col-md-6">
-          <h2>Draft Your Team</h2>
-          <div className="mb-3">
+      {myTeam === null ? (
+        <div>
+          <h2>Select Your Team</h2>
+          {draftState.teamNames.map((name, index) => (
             <button
-              className="btn btn-primary me-2"
-              onClick={() => setDraftState((prev) => ({ ...prev, isDrafting: true }))}
-              disabled={draftState.isDrafting || draftState.draftComplete}
+              key={index}
+              className="btn btn-primary me-2 mb-2"
+              onClick={() => assignTeam(index)}
             >
-              Start Draft
+              {name}
             </button>
-          </div>
-          {draftState.draftComplete && <div className="alert alert-success">Draft Complete! All teams are full.</div>}
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h4>Available Players</h4>
-            <div>
-              <button className="btn btn-sm btn-secondary me-2" onClick={() => handleSort('owgr_rank')}>
-                Sort by OWGR
-              </button>
-              <button className="btn btn-sm btn-secondary" onClick={() => handleSort('dg_rank')}>
-                Sort by DG Rank
-              </button>
-            </div>
-          </div>
-          <table className="table table-striped">
-            <thead>
-              <tr>
-                <th>OWGR Rank</th>
-                <th>DG Rank</th>
-                <th>Player</th>
-              </tr>
-            </thead>
-            <tbody>
-              {draftState.sortedPlayers.map((player) => (
-                <tr
-                  key={player.id}
-                  onClick={() => handleDraftPlayer(draftState.sortedPlayers.findIndex((p) => p.id === player.id))}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td>{player.owgr_rank}</td>
-                  <td>{player.dg_rank}</td>
-                  <td>{player.name}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="col-md-6">
-          <h4>Teams</h4>
-          {draftState.teams.map((team, teamIndex) => (
-            <div key={teamIndex} className={`mb-4 ${draftState.currentTeam === teamIndex ? 'bg-light' : ''}`}>
-              <h5>{draftState.teamNames[teamIndex]}</h5>
-              <ul className="list-group">
-                {team.map((player) => (
-                  <li key={player.id} className="list-group-item">
-                    {player.name}
-                  </li>
-                ))}
-              </ul>
-            </div>
           ))}
         </div>
-      </div>
+      ) : (
+        <div className="row">
+          <div className="col-md-6">
+            <h2>Draft Your Team (Your Team: {draftState.teamNames[myTeam]})</h2>
+            <div className="mb-3">
+              <button
+                className="btn btn-primary me-2"
+                onClick={() => setDraftState((prev) => ({ ...prev, isDrafting: true }))}
+                disabled={draftState.isDrafting || draftState.draftComplete}
+              >
+                Start Draft
+              </button>
+            </div>
+            {draftState.draftComplete && <div className="alert alert-success">Draft Complete! All teams are full.</div>}
+            {myTeam !== draftState.currentTeam && draftState.isDrafting && !draftState.draftComplete && (
+              <div className="alert alert-info">Waiting for {draftState.teamNames[draftState.currentTeam]} to draft...</div>
+            )}
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <h4>Available Players</h4>
+              <div>
+                <button className="btn btn-sm btn-secondary me-2" onClick={() => handleSort('owgr_rank')}>
+                  Sort by OWGR
+                </button>
+                <button className="btn btn-sm btn-secondary" onClick={() => handleSort('dg_rank')}>
+                  Sort by DG Rank
+                </button>
+              </div>
+            </div>
+            <table className="table table-striped">
+              <thead>
+                <tr>
+                  <th>OWGR Rank</th>
+                  <th>DG Rank</th>
+                  <th>Player</th>
+                </tr>
+              </thead>
+              <tbody>
+                {draftState.sortedPlayers.map((player) => (
+                  <tr
+                    key={player.id}
+                    onClick={() => handleDraftPlayer(draftState.sortedPlayers.findIndex((p) => p.id === player.id))}
+                    style={{ cursor: myTeam === draftState.currentTeam && draftState.isDrafting ? 'pointer' : 'not-allowed' }}
+                  >
+                    <td>{player.owgr_rank}</td>
+                    <td>{player.dg_rank}</td>
+                    <td>{player.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="col-md-6">
+            <h4>Teams</h4>
+            {draftState.teams.map((team, teamIndex) => (
+              <div key={teamIndex} className={`mb-4 ${draftState.currentTeam === teamIndex ? 'bg-light' : ''}`}>
+                <h5>{draftState.teamNames[teamIndex]}</h5>
+                <ul className="list-group">
+                  {team.map((player) => (
+                    <li key={player.id} className="list-group-item">
+                      {player.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
