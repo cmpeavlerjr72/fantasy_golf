@@ -29,21 +29,20 @@ const Draft = () => {
     if (!selectedLeague) return;
     setLeagueId(selectedLeague);
 
-    // Fetch players and rankings
     fetch(`${API_BASE_URL}/field`)
-      .then(res => res.json())
-      .then(fieldData => {
-        const fieldPlayers = fieldData.field.map(p => ({
+      .then((res) => res.json())
+      .then((fieldData) => {
+        const fieldPlayers = fieldData.field.map((p) => ({
           id: p.dg_id,
           name: p.player_name,
         }));
 
         fetch(`${API_BASE_URL}/rankings`)
-          .then(res => res.json())
-          .then(rankingsData => {
-            const playersWithRankings = fieldPlayers.map(p => {
+          .then((res) => res.json())
+          .then((rankingsData) => {
+            const playersWithRankings = fieldPlayers.map((p) => {
               const match = rankingsData.rankings.find(
-                r => normalizeName(r.player_name) === normalizeName(p.name)
+                (r) => normalizeName(r.player_name) === normalizeName(p.name)
               );
               return {
                 ...p,
@@ -58,28 +57,26 @@ const Draft = () => {
           });
       });
 
-    // Fetch league data
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setTeams(data.teams);
         setTeamNames(data.teamNames);
       });
 
-    // Listen for draft updates
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
       if (updateLeagueId !== selectedLeague) return;
 
-      setTeams(prev => {
-        const updated = [...prev];
+      setTeams((prevTeams) => {
+        const updated = [...prevTeams];
         updated[teamIndex] = [...updated[teamIndex], player];
         return updated;
       });
 
-      setSortedPlayers(prev => prev.filter(p => p.id !== player.id));
+      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id));
 
-      setCurrentTeam(prev => {
-        const next = snakeDirection === 1 ? prev + 1 : prev - 1;
+      setCurrentTeam((prevTeam) => {
+        const next = snakeDirection === 1 ? prevTeam + 1 : prevTeam - 1;
         if (next >= teams.length) {
           setSnakeDirection(-1);
           return teams.length - 1;
@@ -91,10 +88,10 @@ const Draft = () => {
         }
       });
 
-      setDraftComplete(prev => {
-        const temp = [...teams];
-        temp[teamIndex].push(player);
-        return temp.every(t => t.length === 6);
+      setDraftComplete((prev) => {
+        const tempTeams = [...teams];
+        tempTeams[teamIndex].push(player);
+        return tempTeams.every((team) => team.length === 6);
       });
     });
 
