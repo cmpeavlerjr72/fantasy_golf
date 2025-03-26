@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io('https://golf-server-0fea.onrender.com');
+const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
 const Draft = () => {
   const [players, setPlayers] = useState([]);
@@ -14,12 +14,30 @@ const Draft = () => {
   const [draftComplete, setDraftComplete] = useState(false);
   const [snakeDirection, setSnakeDirection] = useState(1);
   const [leagueId, setLeagueId] = useState('');
-
-  const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
+  const [socket, setSocket] = useState(null);
 
   const normalizeName = (name) => (name ? name.toLowerCase().trim() : '');
 
+  // Initialize socket connection
   useEffect(() => {
+    const newSocket = io(API_BASE_URL, {
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+    });
+    setSocket(newSocket);
+    console.log('Socket initialized');
+
+    return () => {
+      newSocket.disconnect();
+      console.log('Socket disconnected');
+    };
+  }, []);
+
+  // Fetch data and set up socket listener
+  useEffect(() => {
+    if (!socket) return;
+
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (!selectedLeague) return;
     setLeagueId(selectedLeague);
@@ -51,7 +69,8 @@ const Draft = () => {
             setPlayers(playersWithRankings);
             setSortedPlayers(sorted);
           });
-      });
+      })
+      .catch((err) => console.error('Error fetching player data:', err));
 
     // Fetch league data
     fetch(`${API_BASE_URL}/leagues/${selectedLeague}`)
@@ -59,11 +78,16 @@ const Draft = () => {
       .then((data) => {
         setTeams(data.teams);
         setTeamNames(data.teamNames);
-      });
+      })
+      .catch((err) => console.error('Error fetching league data:', err));
 
-    // Socket listener
+    // Socket listener for draft updates
     socket.on('draft-update', ({ leagueId: updateLeagueId, teamIndex, player }) => {
-      if (updateLeagueId !== selectedLeague) return;
+      console.log(`Received draft-update: leagueId=${updateLeagueId}, teamIndex=${teamIndex}, player=${player.name}`);
+      if (updateLeagueId !== selectedLeague) {
+        console.log(`Ignoring update: leagueId ${updateLeagueId} does not match ${selectedLeague}`);
+        return;
+      }
 
       setTeams((prev) => {
         const updated = [...prev];
@@ -71,9 +95,8 @@ const Draft = () => {
         return updated;
       });
 
-      setSortedPlayers((prev) => prev.filter((p) => p.id !== player.id));
+      setSortedPlayers((prev) => prev.filter((p) => p.id !== playerA.id));
 
-      // Move to next team
       setCurrentTeam((prev) => {
         let next = prev + snakeDirection;
         if (next >= teams.length) {
@@ -86,7 +109,6 @@ const Draft = () => {
         return next;
       });
 
-      // Check for completion
       setDraftComplete((prev) => {
         const tempTeams = [...teams];
         tempTeams[teamIndex].push(player);
@@ -97,17 +119,14 @@ const Draft = () => {
     return () => {
       socket.off('draft-update');
     };
-  }, [snakeDirection, teams.length]);
+  }, [socket, snakeDirection, teams.length]);
 
   const handleDraftPlayer = (playerIndex) => {
-    if (!isDrafting || draftComplete || currentTeam === null) return;
+    if (!isDrafting || draftComplete || currentTeam === null || !socket) return;
 
     const player = sortedPlayers[playerIndex];
-    socket.emit('draft-pick', {
-      leagueId,
-      teamIndex: currentTeam,
-      player,
-    });
+    console.log(`Emitting draft-pick: leagueId=${leagueId}, teamIndex=${currentTeam}, player=${player.name}`);
+    socket.emit('draft-pick', { leagueId, teamIndex: currentTeam, player });
   };
 
   const handleSort = (criteria) => {
