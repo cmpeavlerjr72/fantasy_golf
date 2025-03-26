@@ -366,7 +366,15 @@ const Draft = () => {
           <div className="col-md-6">
             <h4>Teams</h4>
             {draftState.teams.map((team, teamIndex) => (
-              <div key={teamIndex} className={`mb-4 ${draftState.currentTeam === teamIndex ? 'bg-light' : ''}`}>
+              <div
+                key={teamIndex}
+                className={`mb-4 p-2 rounded ${draftState.currentTeam === teamIndex ? 'active-team' : ''}`}
+                style={
+                  draftState.currentTeam === teamIndex
+                    ? { backgroundColor: '#4a90e2' } // Blue highlight for active team
+                    : {}
+                }
+              >
                 <h5>{draftState.teamNames[teamIndex]}</h5>
                 <ul className="list-group">
                   {team.map((player) => (
