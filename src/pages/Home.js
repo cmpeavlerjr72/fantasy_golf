@@ -6,8 +6,8 @@ const Home = () => {
   const [teamNames, setTeamNames] = useState([]);
   const [leagueId, setLeagueId] = useState('');
   const [leaderboard, setLeaderboard] = useState([]);
-  const [selectedTeam, setSelectedTeam] = useState(null);
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [selectedTeam, setSelectedTeam] = useState(null); // Track the expanded team
+  const [selectedPlayer, setSelectedPlayer] = useState(null); // Track the selected player for scorecard
   const [lastUpdateTime, setLastUpdateTime] = useState(null); // Track the last update time
   const [isUpdating, setIsUpdating] = useState(false); // Track the update status
 
@@ -60,36 +60,48 @@ const Home = () => {
         const playerData = data.players.find(
           (player) => normalizeName(player.player_name) === normalizeName(playerName)
         );
-        setSelectedPlayer(playerData || null);
+        setSelectedPlayer({ ...playerData, name: playerName } || null);
       })
       .catch((error) => console.error('Error fetching scorecard data:', error));
   };
 
-  // Calculate the total score for each team
+  // Calculate the total score for each team and sort players by score
   const calculateTeamScores = () => {
     return teamNames.map((teamName, index) => {
       const team = teams[index];
-      const teamScore = team
+      const playersWithScores = team
         .map((player) => {
-          const name = leaderboard.find(
+          const playerStats = leaderboard.find(
             (entry) => normalizeName(entry.name) === normalizeName(player.name)
           );
-          return name ? name.scoreToPar : null;
+          return {
+            ...player,
+            scoreToPar: playerStats ? playerStats.scoreToPar : null,
+          };
         })
-        .filter((score) => score !== null) // Exclude players without scores
-        .reduce((total, score) => total + score, 0); // Sum the scores
-      return { teamName, score: teamScore };
+        .filter((player) => player.scoreToPar !== null) // Exclude players without scores
+        .sort((a, b) => a.scoreToPar - b.scoreToPar); // Sort by score (best to worst)
+
+      const teamScore = playersWithScores
+        .reduce((total, player) => total + player.scoreToPar, 0); // Sum the scores
+
+      return { teamName, score: teamScore, players: playersWithScores };
     });
   };
 
-  // Handle team card click
-  const handleCardClick = (teamIndex) => {
+  // Handle team row click to expand/collapse
+  const handleTeamClick = (teamIndex) => {
     setSelectedTeam(selectedTeam === teamIndex ? null : teamIndex);
+    setSelectedPlayer(null); // Reset selected player when team changes
   };
 
   // Handle player click to fetch scorecard data
   const handlePlayerClick = (playerName) => {
-    fetchScorecardData(playerName);
+    if (selectedPlayer && selectedPlayer.name === playerName) {
+      setSelectedPlayer(null); // Collapse if the same player is clicked again
+    } else {
+      fetchScorecardData(playerName);
+    }
   };
 
   // Handle updating data via the backend
@@ -105,6 +117,19 @@ const Home = () => {
       .then((data) => {
         setLastUpdateTime(data.lastUpdateTime);
         alert('Data updated successfully!');
+        // Refresh leaderboard data after update
+        fetch(`${API_BASE_URL}/live-stats`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.live_stats && Array.isArray(data.live_stats)) {
+              const normalizedLeaderboard = data.live_stats.map((player) => ({
+                name: normalizeName(player.player_name),
+                scoreToPar: parseFloat(player.total) || 0,
+              }));
+              setLeaderboard(normalizedLeaderboard);
+            }
+          })
+          .catch((error) => console.error('Error fetching live tournament stats:', error));
       })
       .catch((error) => alert(error.message))
       .finally(() => setIsUpdating(false));
@@ -113,35 +138,35 @@ const Home = () => {
   // Get styles for scores based on comparison with par
   const getScoreStyle = (score, par) => {
     const styles = {
-      display: 'inline-block', // Ensures styling only wraps the score
+      display: 'inline-block',
       width: '24px',
       height: '24px',
-      lineHeight: '24px', // Aligns text vertically
+      lineHeight: '24px',
       textAlign: 'center',
       fontWeight: 'bold',
-      borderRadius: '0', // Default (no rounded edges)
+      borderRadius: '0',
     };
 
     if (score < par) {
-      styles.color = 'red'; // Text color for scores under par
+      styles.color = 'red';
       if (score === par - 1) {
-        styles.border = '2px solid black'; // Black outline for birdie
-        styles.borderRadius = '50%'; // Circle for birdie
+        styles.border = '2px solid black';
+        styles.borderRadius = '50%';
       } else if (score < par - 1) {
-        styles.backgroundColor = 'white'; // Filled white circle for eagle or better
+        styles.backgroundColor = 'white';
         styles.borderRadius = '50%';
       }
     } else if (score > par) {
-      styles.color = 'green'; // Text color for scores over par
+      styles.color = 'green';
       if (score === par + 1) {
-        styles.border = '2px solid black'; // Black outline for bogey
-        styles.borderRadius = '0'; // Square for bogey
+        styles.border = '2px solid black';
+        styles.borderRadius = '0';
       } else if (score > par + 1) {
-        styles.backgroundColor = 'white'; // Filled white square for double bogey or worse
+        styles.backgroundColor = 'white';
         styles.borderRadius = '0';
       }
     } else if (score === par) {
-      styles.color = 'green'; // Text color for par
+      styles.color = 'green';
     }
 
     return styles;
@@ -156,11 +181,18 @@ const Home = () => {
       {/* Update Data Button */}
       <div className="text-center mb-4">
         <button
-          className="btn btn-primary"
+          className="btn btn-primary update-btn"
           onClick={handleUpdateData}
           disabled={isUpdating}
         >
-          {isUpdating ? 'Updating...' : 'Update Data'}
+          {isUpdating ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+              Updating...
+            </>
+          ) : (
+            'Update Data'
+          )}
         </button>
         {lastUpdateTime && (
           <p className="mt-2">
@@ -171,7 +203,7 @@ const Home = () => {
 
       {/* Leaderboard */}
       <h4 className="mt-4">Team Leaderboard</h4>
-      <table className="table table-striped table-bordered">
+      <table className="table table-striped table-bordered leaderboard-table">
         <thead>
           <tr>
             <th>Rank</th>
@@ -181,96 +213,90 @@ const Home = () => {
         </thead>
         <tbody>
           {sortedScores.map((team, index) => (
-            <tr key={index}>
-              <td>{index + 1}</td>
-              <td>{team.teamName}</td>
-              <td>{team.score}</td>
-            </tr>
+            <React.Fragment key={index}>
+              <tr
+                onClick={() => handleTeamClick(index)}
+                className={selectedTeam === index ? 'table-active' : ''}
+                style={{ cursor: 'pointer' }}
+              >
+                <td>{index + 1}</td>
+                <td>{team.teamName}</td>
+                <td className={team.score < 0 ? 'text-danger' : team.score > 0 ? 'text-success' : ''}>
+                  {team.score}
+                </td>
+              </tr>
+              {selectedTeam === index && (
+                <tr>
+                  <td colSpan="3" className="expanded-team">
+                    <ul className="list-group">
+                      {team.players.map((player, playerIndex) => (
+                        <li
+                          key={playerIndex}
+                          className="list-group-item player-item"
+                          onClick={() => handlePlayerClick(player.name)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span>{player.name}</span>
+                            <span className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
+                              {player.scoreToPar}
+                            </span>
+                          </div>
+                          {selectedPlayer && selectedPlayer.name === player.name && (
+                            <div className="mt-2 scorecard-container">
+                              <h5>Scorecard for {selectedPlayer.player_name}</h5>
+                              <table className="table table-bordered table-striped scorecard">
+                                <thead>
+                                  <tr>
+                                    <th>Round</th>
+                                    {Array.from({ length: 18 }, (_, i) => (
+                                      <th key={i + 1}>Hole {i + 1}</th>
+                                    ))}
+                                    <th>OUT</th>
+                                    <th>IN</th>
+                                    <th>Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(selectedPlayer.rounds || []).map((round, roundIndex) => {
+                                    const outScore = round.scores
+                                      .slice(0, 9)
+                                      .reduce((sum, hole) => sum + hole.score, 0);
+                                    const inScore = round.scores
+                                      .slice(9)
+                                      .reduce((sum, hole) => sum + hole.score, 0);
+                                    const totalScore = outScore + inScore;
+
+                                    return (
+                                      <tr key={roundIndex}>
+                                        <td>Round {round.round_num}</td>
+                                        {round.scores.map((hole, holeIndex) => (
+                                          <td key={`hole-${holeIndex}`}>
+                                            <span style={getScoreStyle(hole.score, hole.par)}>
+                                              {hole.score}
+                                            </span>
+                                          </td>
+                                        ))}
+                                        <td>{outScore}</td>
+                                        <td>{inScore}</td>
+                                        <td>{totalScore}</td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
-
-      {/* Team Cards */}
-      <h4 className="mt-4">Teams</h4>
-      <div className="row">
-        {teams.map((team, index) => (
-          <div className="col-md-4 mb-4" key={index}>
-            <div
-              className={`card ${selectedTeam === index ? 'bg-light' : ''}`}
-              onClick={() => handleCardClick(index)}
-              style={{ cursor: 'pointer' }}
-            >
-              <div className="card-body">
-                <h5 className="card-title">{teamNames[index]}</h5>
-                <p className="card-text">Click to view golfers</p>
-              </div>
-            </div>
-            {selectedTeam === index && (
-              <div className="mt-2">
-                <ul className="list-group">
-                  {team.map((player, playerIndex) => (
-                    <li
-                      key={playerIndex}
-                      className="list-group-item"
-                      onClick={() => handlePlayerClick(player.name)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {player.name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Scorecard */}
-      {selectedPlayer && (
-        <div className="mt-4">
-          <h4>Scorecard for {selectedPlayer.player_name}</h4>
-          <table className="table table-bordered table-striped scorecard">
-            <thead>
-              <tr>
-                <th>Round</th>
-                {Array.from({ length: 18 }, (_, i) => (
-                  <th key={i + 1}>Hole {i + 1}</th>
-                ))}
-                <th>OUT</th>
-                <th>IN</th>
-                <th>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(selectedPlayer.rounds || []).map((round, roundIndex) => {
-                const outScore = round.scores
-                  .slice(0, 9)
-                  .reduce((sum, hole) => sum + hole.score, 0);
-                const inScore = round.scores
-                  .slice(9)
-                  .reduce((sum, hole) => sum + hole.score, 0);
-                const totalScore = outScore + inScore;
-
-                return (
-                  <tr key={roundIndex}>
-                    <td>Round {round.round_num}</td>
-                    {round.scores.map((hole, holeIndex) => (
-                      <td key={`hole-${holeIndex}`}>
-                        <span style={getScoreStyle(hole.score, hole.par)}>
-                          {hole.score}
-                        </span>
-                      </td>
-                    ))}
-                    <td>{outScore}</td>
-                    <td>{inScore}</td>
-                    <td>{totalScore}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 };
