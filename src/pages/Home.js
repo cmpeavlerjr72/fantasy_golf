@@ -38,6 +38,7 @@ const Home = () => {
             const normalizedLeaderboard = data.live_stats.map((player) => ({
               name: normalizeName(player.player_name),
               scoreToPar: parseFloat(player.total) || 0,
+              thru: player.thru || 'N/A', // Include the "thru" value
             }));
             setLeaderboard(normalizedLeaderboard);
           }
@@ -65,7 +66,7 @@ const Home = () => {
       .catch((error) => console.error('Error fetching scorecard data:', error));
   };
 
-  // Calculate the total score for each team and sort players by score
+  // Calculate the total score for each team using the 4 best scores
   const calculateTeamScores = () => {
     return teamNames.map((teamName, index) => {
       const team = teams[index];
@@ -77,15 +78,22 @@ const Home = () => {
           return {
             ...player,
             scoreToPar: playerStats ? playerStats.scoreToPar : null,
+            thru: playerStats ? playerStats.thru : 'N/A', // Include "thru" for each player
           };
         })
         .filter((player) => player.scoreToPar !== null) // Exclude players without scores
         .sort((a, b) => a.scoreToPar - b.scoreToPar); // Sort by score (best to worst)
 
-      const teamScore = playersWithScores
+      // Take the top 4 lowest scores (or fewer if the team has fewer than 4 players)
+      const topFourScores = playersWithScores
+        .slice(0, 4) // Take the first 4 after sorting (lowest scores)
         .reduce((total, player) => total + player.scoreToPar, 0); // Sum the scores
 
-      return { teamName, score: teamScore, players: playersWithScores };
+      return {
+        teamName,
+        score: topFourScores,
+        players: playersWithScores,
+      };
     });
   };
 
@@ -125,6 +133,7 @@ const Home = () => {
               const normalizedLeaderboard = data.live_stats.map((player) => ({
                 name: normalizeName(player.player_name),
                 scoreToPar: parseFloat(player.total) || 0,
+                thru: player.thru || 'N/A', // Include the "thru" value
               }));
               setLeaderboard(normalizedLeaderboard);
             }
@@ -238,9 +247,14 @@ const Home = () => {
                         >
                           <div className="d-flex justify-content-between align-items-center">
                             <span>{player.name}</span>
-                            <span className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
-                              {player.scoreToPar}
-                            </span>
+                            <div className="d-flex align-items-center">
+                              <span className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
+                                {player.scoreToPar}
+                              </span>
+                              <span className="ms-3 text-muted">
+                                Thru: {player.thru}
+                              </span>
+                            </div>
                           </div>
                           {selectedPlayer && selectedPlayer.name === player.name && (
                             <div className="mt-2 scorecard-container">

@@ -94,6 +94,16 @@ h2 {
   flex-direction: column;
 }
 
+/* Style for the "Thru" value */
+.player-item .d-flex {
+  width: 100%;
+}
+
+.player-item .text-muted {
+  font-size: 0.9rem;
+  color: #666 !important; /* Ensure "Thru" is always gray */
+}
+
 /* Scorecard styling */
 .scorecard-container {
   padding: 10px 20px;
@@ -145,5 +155,9 @@ h2 {
   .scorecard th,
   .scorecard td {
     padding: 6px;
+  }
+
+  .player-item .text-muted {
+    font-size: 0.8rem;
   }
 }
