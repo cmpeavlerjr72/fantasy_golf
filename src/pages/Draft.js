@@ -90,6 +90,7 @@ const Draft = () => {
         return;
       }
 
+      console.log('Received draft-status:', draftStatus);
       setDraftState({
         teams: draftStatus.teams || [],
         teamNames: draftStatus.teamNames || [],
@@ -145,6 +146,7 @@ const Draft = () => {
       console.log('Draft blocked: Not your turn or invalid state');
       return;
     }
+    console.log('Drafting player:', player);
     console.log(`Emitting draft-pick: leagueId=${leagueId}, teamIndex=${myTeam}, player=${player.name}`);
     socket.emit('draft-pick', { leagueId, teamIndex: myTeam, player });
   };
