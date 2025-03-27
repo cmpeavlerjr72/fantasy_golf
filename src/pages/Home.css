@@ -8,6 +8,27 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Navigation bar styling */
+.navbar {
+  background-color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.navbar-brand {
+  color: #2e7d32 !important;
+  font-weight: bold;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.nav-link {
+  color: #2e7d32 !important;
+}
+
+.nav-link:hover {
+  color: #1b5e20 !important;
+}
+
 /* Header styling */
 h2 {
   text-align: center;
@@ -71,11 +92,14 @@ h2 {
 .expanded-team {
   padding: 0 !important;
   background-color: #f9f9f9;
+  width: 100%; /* Ensure it takes the full width */
 }
 
+/* Player list styling */
 .list-group {
   margin: 0;
   border: none;
+  width: 100%; /* Full width */
 }
 
 .list-group-item {
@@ -83,6 +107,8 @@ h2 {
   border-bottom: 1px solid #e0e0e0;
   padding: 10px 20px;
   transition: background-color 0.3s;
+  width: 100%; /* Full width */
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
 .list-group-item:hover {
@@ -92,11 +118,14 @@ h2 {
 .player-item {
   display: flex;
   flex-direction: column;
+  width: 100%; /* Full width */
 }
 
-/* Style for the "Thru" value */
+/* Style for the player row (name, score, thru) */
 .player-item .d-flex {
   width: 100%;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .player-item .text-muted {
@@ -109,11 +138,14 @@ h2 {
   padding: 10px 20px;
   background-color: #ffffff;
   border-top: 1px solid #e0e0e0;
+  width: 100%; /* Full width */
+  box-sizing: border-box;
 }
 
 .scorecard {
   font-size: 0.9rem;
   margin-bottom: 0;
+  width: 100%; /* Full width */
 }
 
 .scorecard th,
@@ -159,5 +191,13 @@ h2 {
 
   .player-item .text-muted {
     font-size: 0.8rem;
+  }
+
+  .list-group-item {
+    padding: 8px 15px;
+  }
+
+  .scorecard-container {
+    padding: 8px 15px;
   }
 }
