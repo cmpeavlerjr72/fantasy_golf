@@ -1,223 +1,149 @@
-/* General Styling */
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  background: #69acf4; /* Light blue for the background */
-}
-
+/* General container styling */
 .container {
-  margin-top: 20px;
-  font-family: 'Arial', sans-serif;
-  color: #f8f8f8;
-  background: linear-gradient(to bottom, rgba(0, 30, 60, 0.8), rgba(0, 50, 100, 0.8)), /* Darker blue gradient overlay */
-              url('../images/ANGC.jpg'); /* Background image */
-  background-size: cover;
-  background-position: center;
-  border-radius: 12px;
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 20px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white for readability */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Header Styling */
+/* Header styling */
 h2 {
   text-align: center;
-  font-weight: bold;
-  color: #004080; /* Dark blue */
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  color: #2e7d32; /* Golf green */
+  font-family: 'Montserrat', sans-serif;
+  margin-bottom: 20px;
 }
 
-h4 {
-  color: #004080; /* Dark blue */
-  margin-top: 20px;
+/* Update button styling */
+.update-btn {
+  background-color: #2e7d32; /* Golf green */
+  border-color: #2e7d32;
   font-weight: bold;
-  border-bottom: 2px solid #87ceeb;
-  padding-bottom: 5px;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.3s;
 }
 
-/* Button Styling */
-.btn-primary {
-  background-color: #1a73e8; /* Blue */
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-size: 16px;
+.update-btn:hover {
+  background-color: #1b5e20; /* Darker green on hover */
+  border-color: #1b5e20;
+}
+
+.update-btn:disabled {
+  background-color: #a5d6a7; /* Light green when disabled */
+  border-color: #a5d6a7;
+}
+
+/* Leaderboard table styling */
+.leaderboard-table {
+  background-color: #ffffff;
+  border-collapse: separate;
+  border-spacing: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-table thead {
+  background-color: #2e7d32; /* Golf green */
+  color: #ffffff;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.leaderboard-table tbody tr {
+  transition: background-color 0.3s;
+}
+
+.leaderboard-table tbody tr:hover {
+  background-color: #f5f5f5; /* Light gray on hover */
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
 
-.btn-primary:hover {
-  background-color: #135ba1; /* Darker blue on hover */
+.leaderboard-table .table-active {
+  background-color: #e8f5e9; /* Light green for selected team */
 }
 
-.btn-primary:disabled {
-  background-color: #cccccc; /* Gray for disabled state */
-  cursor: not-allowed;
+/* Expanded team section */
+.expanded-team {
+  padding: 0 !important;
+  background-color: #f9f9f9;
 }
 
-/* Last Updated Message */
-.mb-4 p {
-  margin-top: 10px;
-  font-size: 14px;
-  color: #f8f8f8; /* Light text for contrast */
-  font-style: italic;
-  text-align: left;
+.list-group {
+  margin: 0;
+  border: none;
 }
 
-/* Leaderboard Table Styling */
-.table {
-  background-color: rgba(200, 220, 255, 0.9); /* Slightly lighter blue background */
-  border: 1px solid #87ceeb;
-  border-radius: 8px;
-  overflow: hidden;
-  color: #004080; /* Dark blue text */
+.list-group-item {
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  padding: 10px 20px;
+  transition: background-color 0.3s;
 }
 
-.table thead {
-  background-color: #87ceeb; /* Light blue */
-  color: #004080; /* Dark blue text */
-  font-weight: bold;
+.list-group-item:hover {
+  background-color: #f5f5f5;
 }
 
-.table tbody tr:nth-child(odd) {
-  background-color: rgba(220, 235, 255, 0.9);
+.player-item {
+  display: flex;
+  flex-direction: column;
 }
 
-.table tbody tr:nth-child(even) {
-  background-color: rgba(210, 230, 255, 0.9);
+/* Scorecard styling */
+.scorecard-container {
+  padding: 10px 20px;
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
 }
 
-.table tbody tr:hover {
-  background-color: rgba(200, 220, 255, 0.9);
+.scorecard {
+  font-size: 0.9rem;
+  margin-bottom: 0;
 }
 
-/* Card Styling */
-.card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid #87ceeb;
-  border-radius: 8px;
-  background-color: rgba(240, 248, 255, 0.9); /* Light blue */
-  color: #004080; /* Dark blue text */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-.card-title {
-  text-align: center;
-  font-weight: bold;
-  color: #004080; /* Dark blue */
-}
-
-.bg-light {
-  background-color: rgba(220, 235, 255, 0.9) !important;
-  border: 2px solid #87ceeb;
-}
-
-/* Scorecard Table */
-.scorecard-table {
-  background-color: rgba(200, 220, 255, 0.9); /* Light blue */
-  border: 1px solid #87ceeb;
-  color: #004080; /* Dark blue text */
-  border-radius: 8px;
-  text-align: center;
-}
-
-.scorecard-table th, .scorecard-table td {
+.scorecard th,
+.scorecard td {
   padding: 8px;
-  border: 1px solid #87ceeb;
+  text-align: center;
 }
 
-.scorecard-table td {
-  background-color: rgba(240, 248, 255, 0.8); /* Slightly lighter blue for cells */
+.scorecard thead {
+  background-color: #4caf50; /* Lighter green */
+  color: #ffffff;
 }
 
-/* Highlighted Scores */
-.score-red {
-  color: red;
-  font-weight: bold;
+/* Color coding for scores */
+.text-danger {
+  color: #d32f2f !important; /* Red for under par */
 }
 
-.score-green {
-  color: green;
-  font-weight: bold;
+.text-success {
+  color: #388e3c !important; /* Green for over par */
 }
 
-.score-circle {
-  border: 2px solid red;
-  border-radius: 50%;
-  padding: 2px;
-  display: inline-block;
-}
-
-.score-circle-white {
-  background-color: white;
-  color: black;
-  border: 2px solid red;
-  border-radius: 50%;
-  padding: 2px;
-  display: inline-block;
-}
-
-.score-square {
-  border: 2px solid green;
-  padding: 2px;
-  display: inline-block;
-}
-
-.score-square-white {
-  background-color: white;
-  color: black;
-  border: 2px solid green;
-  padding: 2px;
-  display: inline-block;
-}
-
-/* General Table Styling */
-.table.scorecard {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed; /* Fix column width */
-}
-
-.table.scorecard th, 
-.table.scorecard td {
-  text-align: center; /* Center align text */
-  vertical-align: middle; /* Center vertically */
-  padding: 8px; /* Add padding for better spacing */
-  width: 50px; /* Ensure consistent width for each cell */
-  height: 40px; /* Consistent height for cells */
-}
-
-.table.scorecard th {
-  background-color: #003f7f; /* Blue background for header */
-  color: white; /* White text for contrast */
-}
-
-.table.scorecard td {
-  background-color: #d8eafb; /* Light background */
-  color: black; /* Black text */
-}
-
-.table.scorecard td:nth-child(20), /* Highlight OUT column */
-.table.scorecard td:nth-child(21), /* Highlight IN column */
-.table.scorecard td:last-child { /* Highlight Total column */
-  font-weight: bold;
-  background-color: #a0d1ff; /* Light blue highlight */
-}
-
-/* Mobile Responsive */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .card {
-    margin-bottom: 20px;
+  .container {
+    padding: 10px;
   }
 
-  .table {
-    font-size: 14px;
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
+  .scorecard {
+    font-size: 0.8rem;
+  }
+
+  .scorecard th,
+  .scorecard td {
+    padding: 6px;
   }
 }
