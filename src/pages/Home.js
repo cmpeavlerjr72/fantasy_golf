@@ -6,6 +6,7 @@ const Home = () => {
   const [teamNames, setTeamNames] = useState([]);
   const [leagueId, setLeagueId] = useState('');
   const [leaderboard, setLeaderboard] = useState([]);
+  const [predictions, setPredictions] = useState([]); // New state for predictions data
   const [selectedTeam, setSelectedTeam] = useState(null); // Track the expanded team
   const [selectedPlayer, setSelectedPlayer] = useState(null); // Track the selected player for scorecard
   const [lastUpdateTime, setLastUpdateTime] = useState(null); // Track the last update time
@@ -44,13 +45,30 @@ const Home = () => {
           }
         })
         .catch((error) => console.error('Error fetching live tournament stats:', error));
-    }
 
-    // Fetch the last update time
-    fetch(`${API_BASE_URL}/last-update`)
-      .then((response) => response.json())
-      .then((data) => setLastUpdateTime(data.lastUpdate))
-      .catch((error) => console.error('Error fetching last update time:', error));
+      // Fetch predictions data
+      fetch(`${API_BASE_URL}/preds`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.data && Array.isArray(data.data)) {
+            const normalizedPredictions = data.data.map((player) => ({
+              name: normalizeName(player.player_name),
+              win: player.win,
+              top_5: player.top_5,
+              top_10: player.top_10,
+              top_20: player.top_20,
+            }));
+            setPredictions(normalizedPredictions);
+          }
+        })
+        .catch((error) => console.error('Error fetching predictions data:', error));
+
+      // Fetch the last update time
+      fetch(`${API_BASE_URL}/last-update`)
+        .then((response) => response.json())
+        .then((data) => setLastUpdateTime(data.lastUpdate))
+        .catch((error) => console.error('Error fetching last update time:', error));
+    }
   }, []);
 
   // Fetch scorecard data when a player is selected
@@ -75,10 +93,17 @@ const Home = () => {
           const playerStats = leaderboard.find(
             (entry) => normalizeName(entry.name) === normalizeName(player.name)
           );
+          const playerPreds = predictions.find(
+            (pred) => normalizeName(pred.name) === normalizeName(player.name)
+          );
           return {
             ...player,
             scoreToPar: playerStats ? playerStats.scoreToPar : null,
-            thru: playerStats ? playerStats.thru : 'N/A', // Include "thru" for each player
+            thru: playerStats ? playerStats.thru : 'N/A',
+            win: playerPreds ? playerPreds.win : null,
+            top_5: playerPreds ? playerPreds.top_5 : null,
+            top_10: playerPreds ? playerPreds.top_10 : null,
+            top_20: playerPreds ? playerPreds.top_20 : null,
           };
         })
         .filter((player) => player.scoreToPar !== null) // Exclude players without scores
@@ -99,7 +124,7 @@ const Home = () => {
 
   // Handle team row click to expand/collapse
   const handleTeamClick = (teamIndex) => {
-    setSelectedTeam(selectedTeam === teamIndex ? null : teamIndex);
+    setSelectedTeam(selectedTeam === index ? null : teamIndex);
     setSelectedPlayer(null); // Reset selected player when team changes
   };
 
@@ -125,6 +150,7 @@ const Home = () => {
       .then((data) => {
         setLastUpdateTime(data.lastUpdateTime);
         alert('Data updated successfully!');
+
         // Refresh leaderboard data after update
         fetch(`${API_BASE_URL}/live-stats`)
           .then((response) => response.json())
@@ -139,6 +165,23 @@ const Home = () => {
             }
           })
           .catch((error) => console.error('Error fetching live tournament stats:', error));
+
+        // Refresh predictions data after update
+        fetch(`${API_BASE_URL}/preds`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.data && Array.isArray(data.data)) {
+              const normalizedPredictions = data.data.map((player) => ({
+                name: normalizeName(player.player_name),
+                win: player.win,
+                top_5: player.top_5,
+                top_10: player.top_10,
+                top_20: player.top_20,
+              }));
+              setPredictions(normalizedPredictions);
+            }
+          })
+          .catch((error) => console.error('Error fetching predictions data:', error));
       })
       .catch((error) => alert(error.message))
       .finally(() => setIsUpdating(false));
@@ -257,6 +300,10 @@ const Home = () => {
                             <th>Player Name</th>
                             <th>Score</th>
                             <th>Thru</th>
+                            <th>Win %</th>
+                            <th>Top 5 %</th>
+                            <th>Top 10 %</th>
+                            <th>Top 20 %</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -265,17 +312,20 @@ const Home = () => {
                               <tr
                                 onClick={() => handlePlayerClick(player.name)}
                                 style={{ cursor: 'pointer' }}
-                                className={playerIndex < 4 ? 'top-scorer': ''} // Highlight Top 4
                               >
                                 <td>{player.name}</td>
                                 <td className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
                                   {player.scoreToPar}
                                 </td>
                                 <td>{player.thru}</td>
+                                <td>{player.win ? (player.win * 100).toFixed(1) : 'N/A'}</td>
+                                <td>{player.top_5 ? (player.top_5 * 100).toFixed(1) : 'N/A'}</td>
+                                <td>{player.top_10 ? (player.top_10 * 100).toFixed(1) : 'N/A'}</td>
+                                <td>{player.top_20 ? (player.top_20 * 100).toFixed(1) : 'N/A'}</td>
                               </tr>
                               {selectedPlayer && selectedPlayer.name === player.name && (
                                 <tr>
-                                  <td colSpan="3" className="scorecard-container">
+                                  <td colSpan="7" className="scorecard-container">
                                     <h5>Scorecard for {selectedPlayer.player_name}</h5>
                                     <table className="table table-bordered table-striped scorecard">
                                       <thead>

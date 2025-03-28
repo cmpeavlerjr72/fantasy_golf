@@ -122,6 +122,42 @@ h2 {
   border: 1px solid #e0e0e0;
 }
 
+/* Set specific widths for columns to balance the table */
+.player-table th:nth-child(1),
+.player-table td:nth-child(1) {
+  width: 30%; /* Player Name */
+}
+
+.player-table th:nth-child(2),
+.player-table td:nth-child(2) {
+  width: 10%; /* Score */
+}
+
+.player-table th:nth-child(3),
+.player-table td:nth-child(3) {
+  width: 10%; /* Thru */
+}
+
+.player-table th:nth-child(4),
+.player-table td:nth-child(4) {
+  width: 12.5%; /* Win % */
+}
+
+.player-table th:nth-child(5),
+.player-table td:nth-child(5) {
+  width: 12.5%; /* Top 5 % */
+}
+
+.player-table th:nth-child(6),
+.player-table td:nth-child(6) {
+  width: 12.5%; /* Top 10 % */
+}
+
+.player-table th:nth-child(7),
+.player-table td:nth-child(7) {
+  width: 12.5%; /* Top 20 % */
+}
+
 .player-table tbody tr {
   transition: background-color 0.3s;
 }
@@ -195,10 +231,5 @@ h2 {
 
   .scorecard-container {
     padding: 8px 15px;
-  }
-
-  .top-scorer {
-    background-color: #e8f5e9; /* Light green to highlight top 4 */
-    font-weight: bold;
   }
 }
