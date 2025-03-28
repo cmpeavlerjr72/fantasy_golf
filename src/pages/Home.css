@@ -1,9 +1,6 @@
-/* Home wrapper for background image */
+/* Home wrapper for background color */
 .home-wrapper {
-  background-image: url('/ANCG.jpg'); /* Correct path relative to Home.css */
-  background-size: cover; /* Make sure the image covers the entire container */
-  background-position: center; /* Center the image */
-  background-attachment: fixed; /* Keep the background fixed while scrolling */
+  background-color: #e8f5e9; /* Light green background, similar to a golf course */
   min-height: 100vh; /* Full viewport height */
 }
 
