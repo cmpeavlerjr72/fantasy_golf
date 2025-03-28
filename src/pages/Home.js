@@ -124,7 +124,7 @@ const Home = () => {
 
   // Handle team row click to expand/collapse
   const handleTeamClick = (teamIndex) => {
-    setSelectedTeam(selectedTeam === index ? null : teamIndex);
+    setSelectedTeam(selectedTeam === teamIndex ? null : teamIndex);
     setSelectedPlayer(null); // Reset selected player when team changes
   };
 
