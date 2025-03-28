@@ -250,73 +250,80 @@ const Home = () => {
                 {selectedTeam === index && (
                   <tr>
                     <td colSpan="3" className="expanded-team">
-                      <ul className="list-group">
-                        {team.players.map((player, playerIndex) => (
-                          <li
-                            key={playerIndex}
-                            className="list-group-item player-item"
-                            onClick={() => handlePlayerClick(player.name)}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            <div className="d-flex justify-content-between align-items-center">
-                              <span>{player.name}</span>
-                              <div className="d-flex align-items-center">
-                                <span className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
+                      {/* Nested table for player details */}
+                      <table className="table table-striped table-bordered player-table">
+                        <thead>
+                          <tr>
+                            <th>Player Name</th>
+                            <th>Score</th>
+                            <th>Thru</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {team.players.map((player, playerIndex) => (
+                            <React.Fragment key={playerIndex}>
+                              <tr
+                                onClick={() => handlePlayerClick(player.name)}
+                                style={{ cursor: 'pointer' }}
+                                className={playerIndex < 4 ? 'top-scorer': ''} // Highlight Top 4
+                              >
+                                <td>{player.name}</td>
+                                <td className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
                                   {player.scoreToPar}
-                                </span>
-                                <span className="ms-3 text-muted">
-                                  Thru: {player.thru}
-                                </span>
-                              </div>
-                            </div>
-                            {selectedPlayer && selectedPlayer.name === player.name && (
-                              <div className="mt-2 scorecard-container">
-                                <h5>Scorecard for {selectedPlayer.player_name}</h5>
-                                <table className="table table-bordered table-striped scorecard">
-                                  <thead>
-                                    <tr>
-                                      <th>Round</th>
-                                      {Array.from({ length: 18 }, (_, i) => (
-                                        <th key={i + 1}>Hole {i + 1}</th>
-                                      ))}
-                                      <th>OUT</th>
-                                      <th>IN</th>
-                                      <th>Total</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {(selectedPlayer.rounds || []).map((round, roundIndex) => {
-                                      const outScore = round.scores
-                                        .slice(0, 9)
-                                        .reduce((sum, hole) => sum + hole.score, 0);
-                                      const inScore = round.scores
-                                        .slice(9)
-                                        .reduce((sum, hole) => sum + hole.score, 0);
-                                      const totalScore = outScore + inScore;
-
-                                      return (
-                                        <tr key={roundIndex}>
-                                          <td>Round {round.round_num}</td>
-                                          {round.scores.map((hole, holeIndex) => (
-                                            <td key={`hole-${holeIndex}`}>
-                                              <span style={getScoreStyle(hole.score, hole.par)}>
-                                                {hole.score}
-                                              </span>
-                                            </td>
+                                </td>
+                                <td>{player.thru}</td>
+                              </tr>
+                              {selectedPlayer && selectedPlayer.name === player.name && (
+                                <tr>
+                                  <td colSpan="3" className="scorecard-container">
+                                    <h5>Scorecard for {selectedPlayer.player_name}</h5>
+                                    <table className="table table-bordered table-striped scorecard">
+                                      <thead>
+                                        <tr>
+                                          <th>Round</th>
+                                          {Array.from({ length: 18 }, (_, i) => (
+                                            <th key={i + 1}>Hole {i + 1}</th>
                                           ))}
-                                          <td>{outScore}</td>
-                                          <td>{inScore}</td>
-                                          <td>{totalScore}</td>
+                                          <th>OUT</th>
+                                          <th>IN</th>
+                                          <th>Total</th>
                                         </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
+                                      </thead>
+                                      <tbody>
+                                        {(selectedPlayer.rounds || []).map((round, roundIndex) => {
+                                          const outScore = round.scores
+                                            .slice(0, 9)
+                                            .reduce((sum, hole) => sum + hole.score, 0);
+                                          const inScore = round.scores
+                                            .slice(9)
+                                            .reduce((sum, hole) => sum + hole.score, 0);
+                                          const totalScore = outScore + inScore;
+
+                                          return (
+                                            <tr key={roundIndex}>
+                                              <td>Round {round.round_num}</td>
+                                              {round.scores.map((hole, holeIndex) => (
+                                                <td key={`hole-${holeIndex}`}>
+                                                  <span style={getScoreStyle(hole.score, hole.par)}>
+                                                    {hole.score}
+                                                  </span>
+                                                </td>
+                                              ))}
+                                              <td>{outScore}</td>
+                                              <td>{inScore}</td>
+                                              <td>{totalScore}</td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </tbody>
+                      </table>
                     </td>
                   </tr>
                 )}

@@ -101,42 +101,34 @@ h2 {
   width: 100%; /* Ensure it takes the full width */
 }
 
-/* Player list styling */
-.list-group {
+/* Player table styling (nested table for expanded team) */
+.player-table {
+  width: 100%; /* Full width of the parent table */
+  background-color: #ffffff;
+  border-collapse: separate;
+  border-spacing: 0;
   margin: 0;
-  border: none;
-  width: 100%; /* Full width */
 }
 
-.list-group-item {
-  border: none;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 10px 20px;
+.player-table thead {
+  background-color: #4caf50; /* Lighter green for nested table header */
+  color: #ffffff;
+}
+
+.player-table th,
+.player-table td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #e0e0e0;
+}
+
+.player-table tbody tr {
   transition: background-color 0.3s;
-  width: 100%; /* Full width */
-  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
-.list-group-item:hover {
-  background-color: #f5f5f5;
-}
-
-.player-item {
-  display: flex;
-  flex-direction: column;
-  width: 100%; /* Full width */
-}
-
-/* Style for the player row (name, score, thru) */
-.player-item .d-flex {
-  width: 100%;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.player-item .text-muted {
-  font-size: 0.9rem;
-  color: #666 !important; /* Ensure "Thru" is always gray */
+.player-table tbody tr:hover {
+  background-color: #f5f5f5; /* Light gray on hover */
+  cursor: pointer;
 }
 
 /* Scorecard styling */
@@ -186,6 +178,12 @@ h2 {
     font-size: 0.9rem;
   }
 
+  .player-table th,
+  .player-table td {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+
   .scorecard {
     font-size: 0.8rem;
   }
@@ -195,15 +193,12 @@ h2 {
     padding: 6px;
   }
 
-  .player-item .text-muted {
-    font-size: 0.8rem;
-  }
-
-  .list-group-item {
-    padding: 8px 15px;
-  }
-
   .scorecard-container {
     padding: 8px 15px;
+  }
+
+  .top-scorer {
+    background-color: #e8f5e9; /* Light green to highlight top 4 */
+    font-weight: bold;
   }
 }
