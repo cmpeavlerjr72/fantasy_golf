@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import './Home.css'; // Import the CSS file for styling
-import ANCGImage from '../images/ANCG.jpg'; // Import the background image
 
 const Home = () => {
   const [teams, setTeams] = useState([]);
@@ -185,15 +184,7 @@ const Home = () => {
   const sortedScores = calculateTeamScores().sort((a, b) => a.score - b.score);
 
   return (
-    <div
-      style={{
-        backgroundImage: `url(${ANCGImage})`,
-        backgroundSize: 'cover',
-        backgroundAttachment: 'fixed',
-        backgroundPosition: 'center',
-        minHeight: '100vh', // Ensure the background covers the full height
-      }}
-    >
+    <div className="home-wrapper">
       <div className="container">
         {/* Navigation Bar */}
         <nav className="navbar navbar-expand-lg navbar-light">
