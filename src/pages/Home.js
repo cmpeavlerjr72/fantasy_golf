@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './Home.css'; // Import the CSS file for styling
-import ANCGImage from './images/ANCG.jpg'; // Import the background image
+import ANCGImage from '../images/ANCG.jpg'; // Import the background image
 
 const Home = () => {
   const [teams, setTeams] = useState([]);
