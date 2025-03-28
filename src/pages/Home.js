@@ -18,7 +18,39 @@ const Home = () => {
   const normalizeName = (name) => name?.toLowerCase().trim();
 
   useEffect(() => {
+    // Log to confirm useEffect is running
+    console.log('useEffect running...');
+
+    // Fetch predictions data (moved outside the if block for debugging)
+    console.log('Fetching predictions data from:', `${API_BASE_URL}/preds`);
+    fetch(`${API_BASE_URL}/preds`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Predictions data received:', data);
+        if (data.data && Array.isArray(data.data)) {
+          const normalizedPredictions = data.data.map((player) => ({
+            name: normalizeName(player.player_name),
+            win: player.win,
+            top_5: player.top_5,
+            top_10: player.top_10,
+            top_20: player.top_20,
+          }));
+          setPredictions(normalizedPredictions);
+        } else {
+          console.error('Predictions data is not in the expected format:', data);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching predictions data:', error.message);
+      });
+
     const selectedLeague = localStorage.getItem('selectedLeague');
+    console.log('Selected League from localStorage:', selectedLeague);
     if (selectedLeague) {
       setLeagueId(selectedLeague);
 
@@ -46,28 +78,13 @@ const Home = () => {
         })
         .catch((error) => console.error('Error fetching live tournament stats:', error));
 
-      // Fetch predictions data
-      fetch(`${API_BASE_URL}/preds`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.data && Array.isArray(data.data)) {
-            const normalizedPredictions = data.data.map((player) => ({
-              name: normalizeName(player.player_name),
-              win: player.win,
-              top_5: player.top_5,
-              top_10: player.top_10,
-              top_20: player.top_20,
-            }));
-            setPredictions(normalizedPredictions);
-          }
-        })
-        .catch((error) => console.error('Error fetching predictions data:', error));
-
       // Fetch the last update time
       fetch(`${API_BASE_URL}/last-update`)
         .then((response) => response.json())
         .then((data) => setLastUpdateTime(data.lastUpdate))
         .catch((error) => console.error('Error fetching last update time:', error));
+    } else {
+      console.warn('No selectedLeague found in localStorage. Skipping league-specific fetches.');
     }
   }, []);
 
@@ -167,9 +184,16 @@ const Home = () => {
           .catch((error) => console.error('Error fetching live tournament stats:', error));
 
         // Refresh predictions data after update
+        console.log('Fetching updated predictions data from:', `${API_BASE_URL}/preds`);
         fetch(`${API_BASE_URL}/preds`)
-          .then((response) => response.json())
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then((data) => {
+            console.log('Updated predictions data received:', data);
             if (data.data && Array.isArray(data.data)) {
               const normalizedPredictions = data.data.map((player) => ({
                 name: normalizeName(player.player_name),
@@ -179,9 +203,13 @@ const Home = () => {
                 top_20: player.top_20,
               }));
               setPredictions(normalizedPredictions);
+            } else {
+              console.error('Updated predictions data is not in the expected format:', data);
             }
           })
-          .catch((error) => console.error('Error fetching predictions data:', error));
+          .catch((error) => {
+            console.error('Error fetching updated predictions data:', error.message);
+          });
       })
       .catch((error) => alert(error.message))
       .finally(() => setIsUpdating(false));
