@@ -17,23 +17,17 @@ const Home = () => {
   // Helper function to normalize names for consistent comparison
   const normalizeName = (name) => name?.toLowerCase().trim();
 
-  // Helper function to calculate the percentile rank of a value in an array
-  const calculatePercentile = (value, array) => {
-    if (!array || array.length === 0) return 0;
-    const sortedArray = [...array].sort((a, b) => a - b);
-    const index = sortedArray.findIndex((item) => item >= value);
-    if (index === -1) return 100; // Value is greater than all in array
-    return (index / (sortedArray.length - 1)) * 100;
-  };
-
-  // Helper function to get background color based on percentile
-  const getBackgroundColor = (percentile) => {
-    // Interpolate between light green (percentile 0) and dark green (percentile 100)
+  // Helper function to get background color based on the ratio of the value to the maximum
+  const getBackgroundColor = (value, maxValue) => {
+    if (!value || !maxValue) return 'transparent'; // No color if value or max is not available
+    // Calculate the ratio (0 to 1) of the value to the maximum
+    const ratio = value / maxValue;
+    // Interpolate between light green (ratio 0) and dark green (ratio 1)
     const rStart = 240, gStart = 255, bStart = 240; // Light green: rgb(240, 255, 240)
     const rEnd = 34, gEnd = 139, bEnd = 34; // Dark green: rgb(34, 139, 34)
-    const r = Math.round(rStart + (rEnd - rStart) * (percentile / 100));
-    const g = Math.round(gStart + (gEnd - gStart) * (percentile / 100));
-    const b = Math.round(bStart + (bEnd - bStart) * (percentile / 100));
+    const r = Math.round(rStart + (rEnd - rStart) * ratio);
+    const g = Math.round(gStart + (gEnd - gStart) * ratio);
+    const b = Math.round(bStart + (bEnd - bStart) * ratio);
     return `rgb(${r}, ${g}, ${b})`;
   };
 
@@ -159,11 +153,16 @@ const Home = () => {
 
   // Calculate the total score for each team using the 4 best scores
   const calculateTeamScores = () => {
-    // Pre-calculate arrays of all values for each percentage type across the field
+    // Pre-calculate the maximum values for each percentage type across the field
     const winValues = predictions.map((pred) => pred.win).filter((val) => val !== null && val !== undefined);
     const top5Values = predictions.map((pred) => pred.top_5).filter((val) => val !== null && val !== undefined);
     const top10Values = predictions.map((pred) => pred.top_10).filter((val) => val !== null && val !== undefined);
     const top20Values = predictions.map((pred) => pred.top_20).filter((val) => val !== null && val !== undefined);
+
+    const maxWin = winValues.length > 0 ? Math.max(...winValues) : 0;
+    const maxTop5 = top5Values.length > 0 ? Math.max(...top5Values) : 0;
+    const maxTop10 = top10Values.length > 0 ? Math.max(...top10Values) : 0;
+    const maxTop20 = top20Values.length > 0 ? Math.max(...top20Values) : 0;
 
     return teamNames.map((teamName, index) => {
       const team = teams[index];
@@ -183,11 +182,11 @@ const Home = () => {
             top_5: playerPreds ? playerPreds.top_5 : null,
             top_10: playerPreds ? playerPreds.top_10 : null,
             top_20: playerPreds ? playerPreds.top_20 : null,
-            // Calculate percentiles for each percentage
-            winPercentile: playerPreds && playerPreds.win ? calculatePercentile(playerPreds.win, winValues) : 0,
-            top5Percentile: playerPreds && playerPreds.top_5 ? calculatePercentile(playerPreds.top_5, top5Values) : 0,
-            top10Percentile: playerPreds && playerPreds.top_10 ? calculatePercentile(playerPreds.top_10, top10Values) : 0,
-            top20Percentile: playerPreds && playerPreds.top_20 ? calculatePercentile(playerPreds.top_20, top20Values) : 0,
+            // Store the maximum values for use in shading
+            maxWin,
+            maxTop5,
+            maxTop10,
+            maxTop20,
           };
         })
         .filter((player) => player.scoreToPar !== null) // Exclude players without scores
@@ -426,16 +425,16 @@ const Home = () => {
                                   {player.scoreToPar}
                                 </td>
                                 <td>{player.thru}</td>
-                                <td style={{ backgroundColor: player.win ? getBackgroundColor(player.winPercentile) : 'transparent' }}>
+                                <td style={{ backgroundColor: getBackgroundColor(player.win, player.maxWin) }}>
                                   {player.win ? (player.win * 100).toFixed(1) : 'N/A'}
                                 </td>
-                                <td style={{ backgroundColor: player.top_5 ? getBackgroundColor(player.top5Percentile) : 'transparent' }}>
+                                <td style={{ backgroundColor: getBackgroundColor(player.top_5, player.maxTop5) }}>
                                   {player.top_5 ? (player.top_5 * 100).toFixed(1) : 'N/A'}
                                 </td>
-                                <td style={{ backgroundColor: player.top_10 ? getBackgroundColor(player.top10Percentile) : 'transparent' }}>
+                                <td style={{ backgroundColor: getBackgroundColor(player.top_10, player.maxTop10) }}>
                                   {player.top_10 ? (player.top_10 * 100).toFixed(1) : 'N/A'}
                                 </td>
-                                <td style={{ backgroundColor: player.top_20 ? getBackgroundColor(player.top20Percentile) : 'transparent' }}>
+                                <td style={{ backgroundColor: getBackgroundColor(player.top_20, player.maxTop20) }}>
                                   {player.top_20 ? (player.top_20 * 100).toFixed(1) : 'N/A'}
                                 </td>
                               </tr>
