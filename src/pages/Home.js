@@ -336,17 +336,6 @@ const Home = () => {
   return (
     <div className="home-wrapper">
       <div className="container">
-        {/* Navigation Bar */}
-        <nav className="navbar navbar-expand-lg navbar-light">
-          <div className="container-fluid">
-            <a className="navbar-brand" href="/">League 40</a>
-            <div className="navbar-nav">
-              <a className="nav-link" href="/">Home</a>
-              <a className="nav-link" href="/draft">Draft</a>
-              <a className="nav-link" href="/stats">Stats</a>
-            </div>
-          </div>
-        </nav>
 
         <h2>Welcome to League {leagueId}</h2>
 
