@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
+import './Draft.css'; // Assuming you have a Draft.css file for styling
 
 const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
@@ -20,6 +21,9 @@ const Draft = () => {
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
   const [error, setError] = useState(null);
   const [pinInput, setPinInput] = useState('');
+  const [shotsGainedStats, setShotsGainedStats] = useState([]); // New state for Shots Gained stats
+
+  const normalizeName = (name) => name?.toLowerCase().trim();
 
   // Initialize socket connection
   useEffect(() => {
@@ -35,8 +39,40 @@ const Draft = () => {
     };
   }, []);
 
-  // Fetch initial data and check draft status
+  // Fetch initial data, SG stats, and check draft status
   useEffect(() => {
+    // Fetch Shots Gained stats
+    fetch(`${API_BASE_URL}/sg-stats`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to fetch Shots Gained stats: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        console.log('Shots Gained stats received:', data);
+        if (data.players && Array.isArray(data.players)) {
+          const normalizedStats = data.players.map((player) => ({
+            dg_id: player.dg_id,
+            player_name: normalizeName(player.player_name),
+            sg_putt: player.sg_putt,
+            sg_arg: player.sg_arg,
+            sg_app: player.sg_app,
+            sg_ott: player.sg_ott,
+            sg_total: player.sg_total,
+            driving_acc: player.driving_acc,
+            driving_dist: player.driving_dist,
+          }));
+          setShotsGainedStats(normalizedStats);
+        } else {
+          console.error('Shots Gained stats data is not in the expected format:', data);
+        }
+      })
+      .catch((error) => {
+        console.error('Error fetching Shots Gained stats:', error.message);
+        alert(`Error fetching Shots Gained stats: ${error.message}`);
+      });
+
     const selectedLeague = localStorage.getItem('selectedLeague');
     if (!selectedLeague) {
       setError('No league selected. Please select a league first.');
@@ -144,6 +180,7 @@ const Draft = () => {
   const handleDraftPlayer = (player) => {
     if (!draftState.isDrafting || draftState.draftComplete || myTeam === null || myTeam !== draftState.currentTeamIndex || !socket) {
       console.log('Draft blocked: Not your turn or invalid state');
+      setError('Draft blocked: Not your turn or invalid state.');
       return;
     }
     console.log('Drafting player:', player);
@@ -256,6 +293,7 @@ const Draft = () => {
                 Change Team
               </button>
             </div>
+            {error && <div className="alert alert-danger">{error}</div>}
             {draftState.draftComplete && <div className="alert alert-success">Draft Complete! All teams are full.</div>}
             {draftState.isDrafting && !draftState.draftComplete && (
               myTeam === draftState.currentTeamIndex ? (
@@ -281,20 +319,40 @@ const Draft = () => {
                   <th>OWGR Rank</th>
                   <th>DG Rank</th>
                   <th>Player</th>
+                  <th>SG Putt</th>
+                  <th>SG Around Green</th>
+                  <th>SG Approach</th>
+                  <th>SG Off Tee</th>
+                  <th>SG Total</th>
+                  <th>Driving Accuracy</th>
+                  <th>Driving Distance</th>
                 </tr>
               </thead>
               <tbody>
-                {draftState.availablePlayers.map((player) => (
-                  <tr
-                    key={player.id}
-                    onClick={() => handleDraftPlayer(player)}
-                    style={{ cursor: myTeam === draftState.currentTeamIndex && draftState.isDrafting ? 'pointer' : 'not-allowed' }}
-                  >
-                    <td>{player.owgr_rank}</td>
-                    <td>{player.dg_rank}</td>
-                    <td>{player.name}</td>
-                  </tr>
-                ))}
+                {draftState.availablePlayers.map((player) => {
+                  // Find the player's Shots Gained stats by matching dg_id
+                  const playerStats = shotsGainedStats.find(
+                    (stat) => String(stat.dg_id) === String(player.id)
+                  );
+                  return (
+                    <tr
+                      key={player.id}
+                      onClick={() => handleDraftPlayer(player)}
+                      style={{ cursor: myTeam === draftState.currentTeamIndex && draftState.isDrafting ? 'pointer' : 'not-allowed' }}
+                    >
+                      <td>{player.owgr_rank}</td>
+                      <td>{player.dg_rank}</td>
+                      <td>{player.name}</td>
+                      <td>{playerStats ? playerStats.sg_putt.toFixed(3) : 'N/A'}</td>
+                      <td>{playerStats ? playerStats.sg_arg.toFixed(3) : 'N/A'}</td>
+                      <td>{playerStats ? playerStats.sg_app.toFixed(3) : 'N/A'}</td>
+                      <td>{playerStats ? playerStats.sg_ott.toFixed(3) : 'N/A'}</td>
+                      <td>{playerStats ? playerStats.sg_total.toFixed(3) : 'N/A'}</td>
+                      <td>{playerStats ? playerStats.driving_acc.toFixed(3) : 'N/A'}</td>
+                      <td>{playerStats ? playerStats.driving_dist.toFixed(3) : 'N/A'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
