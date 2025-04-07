@@ -17,13 +17,28 @@ const Draft = () => {
   const [leagueId, setLeagueId] = useState('');
   const [socket, setSocket] = useState(null);
   const [sortBy, setSortBy] = useState('owgr_rank');
+  const [sortDirection, setSortDirection] = useState(1); // 1 for ascending, -1 for descending
   const [myTeam, setMyTeam] = useState(null);
   const [isLoadingTeams, setIsLoadingTeams] = useState(true);
   const [error, setError] = useState(null);
   const [pinInput, setPinInput] = useState('');
-  const [shotsGainedStats, setShotsGainedStats] = useState([]); // New state for Shots Gained stats
+  const [shotsGainedStats, setShotsGainedStats] = useState([]); // State for Shots Gained stats
+  const [statRanges, setStatRanges] = useState({}); // Store min/max ranges for each SG stat
 
   const normalizeName = (name) => name?.toLowerCase().trim();
+
+  // Function to calculate background color based on value and range
+  const getBackgroundColor = (value, minValue, maxValue) => {
+    if (value === null || value === undefined || minValue === maxValue) return 'transparent';
+    if (value < 0) return 'rgba(255, 99, 71, 0.2)'; // Light red for negative values
+    const ratio = (value - minValue) / (maxValue - minValue);
+    const rStart = 240, gStart = 255, bStart = 240;
+    const rEnd = 34, gEnd = 139, bEnd = 34;
+    const r = Math.round(rStart + (rEnd - rStart) * ratio);
+    const g = Math.round(gStart + (gEnd - gStart) * ratio);
+    const b = Math.round(bStart + (bEnd - bStart) * ratio);
+    return `rgb(${r}, ${g}, ${b})`;
+  };
 
   // Initialize socket connection
   useEffect(() => {
@@ -64,6 +79,29 @@ const Draft = () => {
             driving_dist: player.driving_dist,
           }));
           setShotsGainedStats(normalizedStats);
+
+          // Calculate min/max ranges for each SG stat
+          const statsToCalculate = [
+            'sg_putt',
+            'sg_arg',
+            'sg_app',
+            'sg_ott',
+            'sg_total',
+            'driving_acc',
+            'driving_dist',
+          ];
+          const ranges = {};
+          statsToCalculate.forEach((stat) => {
+            const values = normalizedStats
+              .map((player) => player[stat])
+              .filter((val) => val !== null && val !== undefined);
+            ranges[stat] = {
+              min: values.length > 0 ? Math.min(...values) : 0,
+              max: values.length > 0 ? Math.max(...values) : 0,
+            };
+          });
+          setStatRanges(ranges);
+          console.log('Stat ranges calculated:', ranges);
         } else {
           console.error('Shots Gained stats data is not in the expected format:', data);
         }
@@ -189,11 +227,35 @@ const Draft = () => {
   };
 
   const handleSort = (criteria) => {
+    // Toggle sort direction if the same column is clicked again
+    const newSortDirection = sortBy === criteria ? sortDirection * -1 : 1;
     setSortBy(criteria);
-    setDraftState((prev) => ({
-      ...prev,
-      availablePlayers: [...prev.availablePlayers].sort((a, b) => a[criteria] - b[criteria]),
-    }));
+    setSortDirection(newSortDirection);
+
+    setDraftState((prev) => {
+      const sortedPlayers = [...prev.availablePlayers].sort((a, b) => {
+        // Handle sorting for player stats (OWGR and DG ranks)
+        if (criteria === 'owgr_rank' || criteria === 'dg_rank') {
+          const aValue = a[criteria] || 0;
+          const bValue = b[criteria] || 0;
+          return (aValue - bValue) * newSortDirection;
+        }
+
+        // Handle sorting for player name (alphabetical)
+        if (criteria === 'name') {
+          return a.name.localeCompare(b.name) * newSortDirection;
+        }
+
+        // Handle sorting for Shots Gained stats
+        const aStat = shotsGainedStats.find((stat) => String(stat.dg_id) === String(a.id));
+        const bStat = shotsGainedStats.find((stat) => String(stat.dg_id) === String(b.id));
+        const aValue = aStat ? aStat[criteria] || 0 : -Infinity; // Use -Infinity for players without stats to sort them to the bottom
+        const bValue = bStat ? bStat[criteria] || 0 : -Infinity;
+        return (aValue - bValue) * newSortDirection;
+      });
+
+      return { ...prev, availablePlayers: sortedPlayers };
+    });
   };
 
   const assignTeam = (teamIndex) => {
@@ -302,30 +364,42 @@ const Draft = () => {
                 <div className="alert alert-info">Waiting for {draftState.teamNames[draftState.currentTeamIndex]} to draft...</div>
               )
             )}
-            <div className="d-flex justify-content-between align-items-center mb-3">
+            <div className="mb-3">
               <h4>Available Players</h4>
-              <div>
-                <button className="btn btn-sm btn-secondary me-2" onClick={() => handleSort('owgr_rank')}>
-                  Sort by OWGR
-                </button>
-                <button className="btn btn-sm btn-secondary" onClick={() => handleSort('dg_rank')}>
-                  Sort by DG Rank
-                </button>
-              </div>
             </div>
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>OWGR Rank</th>
-                  <th>DG Rank</th>
-                  <th>Player</th>
-                  <th>SG Putt</th>
-                  <th>SG Around Green</th>
-                  <th>SG Approach</th>
-                  <th>SG Off Tee</th>
-                  <th>SG Total</th>
-                  <th>Driving Accuracy</th>
-                  <th>Driving Distance</th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('owgr_rank')}>
+                    OWGR Rank {sortBy === 'owgr_rank' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('dg_rank')}>
+                    DG Rank {sortBy === 'dg_rank' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('name')}>
+                    Player {sortBy === 'name' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('sg_putt')}>
+                    SG Putt {sortBy === 'sg_putt' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('sg_arg')}>
+                    SG Around Green {sortBy === 'sg_arg' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('sg_app')}>
+                    SG Approach {sortBy === 'sg_app' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('sg_ott')}>
+                    SG Off Tee {sortBy === 'sg_ott' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('sg_total')}>
+                    SG Total {sortBy === 'sg_total' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('driving_acc')}>
+                    Driving Accuracy {sortBy === 'driving_acc' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
+                  <th style={{ cursor: 'pointer' }} onClick={() => handleSort('driving_dist')}>
+                    Driving Distance {sortBy === 'driving_dist' && (sortDirection === 1 ? '↑' : '↓')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -343,13 +417,27 @@ const Draft = () => {
                       <td>{player.owgr_rank}</td>
                       <td>{player.dg_rank}</td>
                       <td>{player.name}</td>
-                      <td>{playerStats ? playerStats.sg_putt.toFixed(3) : 'N/A'}</td>
-                      <td>{playerStats ? playerStats.sg_arg.toFixed(3) : 'N/A'}</td>
-                      <td>{playerStats ? playerStats.sg_app.toFixed(3) : 'N/A'}</td>
-                      <td>{playerStats ? playerStats.sg_ott.toFixed(3) : 'N/A'}</td>
-                      <td>{playerStats ? playerStats.sg_total.toFixed(3) : 'N/A'}</td>
-                      <td>{playerStats ? playerStats.driving_acc.toFixed(3) : 'N/A'}</td>
-                      <td>{playerStats ? playerStats.driving_dist.toFixed(3) : 'N/A'}</td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.sg_putt, statRanges.sg_putt?.min, statRanges.sg_putt?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.sg_putt.toFixed(3) : 'N/A'}
+                      </td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.sg_arg, statRanges.sg_arg?.min, statRanges.sg_arg?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.sg_arg.toFixed(3) : 'N/A'}
+                      </td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.sg_app, statRanges.sg_app?.min, statRanges.sg_app?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.sg_app.toFixed(3) : 'N/A'}
+                      </td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.sg_ott, statRanges.sg_ott?.min, statRanges.sg_ott?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.sg_ott.toFixed(3) : 'N/A'}
+                      </td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.sg_total, statRanges.sg_total?.min, statRanges.sg_total?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.sg_total.toFixed(3) : 'N/A'}
+                      </td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.driving_acc, statRanges.driving_acc?.min, statRanges.driving_acc?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.driving_acc.toFixed(3) : 'N/A'}
+                      </td>
+                      <td style={{ backgroundColor: playerStats ? getBackgroundColor(playerStats.driving_dist, statRanges.driving_dist?.min, statRanges.driving_dist?.max) : 'transparent' }}>
+                        {playerStats ? playerStats.driving_dist.toFixed(3) : 'N/A'}
+                      </td>
                     </tr>
                   );
                 })}

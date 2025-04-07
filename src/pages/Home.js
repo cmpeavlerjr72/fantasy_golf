@@ -123,7 +123,8 @@ const Home = () => {
         .then((data) => setLastUpdateTime(data.lastUpdate))
         .catch((error) => {
           console.error('Error fetching last update time:', error.message);
-          alert(`Error fetching last update time: ${error.message}`);
+          // Instead of alert, we'll handle this in the UI
+          setLastUpdateTime('error'); // Use 'error' to indicate failure
         });
     } else {
       console.warn('No selectedLeague found in localStorage. Skipping league-specific fetches.');
@@ -310,19 +311,19 @@ const Home = () => {
       styles.color = 'red';
       if (score === par - 1) {
         styles.border = '2px solid black';
-        styles.borderRadius= '50%';
+        styles.borderRadius = '50%';
       } else if (score < par - 1) {
         styles.backgroundColor = 'white';
-        styles.borderRadius= '50%';
+        styles.borderRadius = '50%';
       }
     } else if (score > par) {
       styles.color = 'green';
       if (score === par + 1) {
         styles.border = '2px solid black';
-        styles.borderRadius= '0';
+        styles.borderRadius = '0';
       } else if (score > par + 1) {
         styles.backgroundColor = 'white';
-        styles.borderRadius= '0';
+        styles.borderRadius = '0';
       }
     } else if (score === par) {
       styles.color = 'green';
@@ -336,7 +337,6 @@ const Home = () => {
   return (
     <div className="home-wrapper">
       <div className="container">
-
         <h2>Welcome to League {leagueId}</h2>
 
         {/* Update Data Button */}
@@ -355,11 +355,16 @@ const Home = () => {
               'Update Data'
             )}
           </button>
-          {lastUpdateTime && (
-            <p className="mt-2">
-              Last updated: <strong>{new Date(lastUpdateTime).toLocaleString()}</strong>
-            </p>
-          )}
+          <p className="mt-2">
+            Last updated:{' '}
+            <strong>
+              {lastUpdateTime === 'error'
+                ? 'over 5 minutes old, feel free to update'
+                : lastUpdateTime
+                ? new Date(lastUpdateTime).toLocaleString()
+                : 'unknown'}
+            </strong>
+          </p>
         </div>
 
         {/* Leaderboard */}
