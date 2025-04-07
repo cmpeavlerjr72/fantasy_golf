@@ -11,6 +11,8 @@ const Home = () => {
   const [selectedPlayer, setSelectedPlayer] = useState(null); // Track the selected player for scorecard
   const [lastUpdateTime, setLastUpdateTime] = useState(null); // Track the last update time
   const [isUpdating, setIsUpdating] = useState(false); // Track the update status
+  const [errorMessage, setErrorMessage] = useState(null); // Track error messages for display
+  const [updateCooldown, setUpdateCooldown] = useState(false); // Track cooldown period
 
   const API_BASE_URL = 'https://golf-server-0fea.onrender.com';
 
@@ -55,7 +57,7 @@ const Home = () => {
         })
         .catch((error) => {
           console.error('Error fetching league data:', error.message);
-          alert(`Error fetching league data: ${error.message}`);
+          setErrorMessage(`Error fetching league data: ${error.message}`);
         });
 
       // Fetch live tournament stats
@@ -79,7 +81,7 @@ const Home = () => {
         })
         .catch((error) => {
           console.error('Error fetching live tournament stats:', error.message);
-          alert(`Error fetching live stats: ${error.message}`);
+          setErrorMessage(`Error fetching live stats: ${error.message}`);
         });
 
       // Fetch predictions data
@@ -108,7 +110,7 @@ const Home = () => {
         })
         .catch((error) => {
           console.error('Error fetching predictions data:', error.message);
-          alert(`Error fetching predictions: ${error.message}`);
+          setErrorMessage(`Error fetching predictions: ${error.message}`);
         });
 
       // Fetch the last update time
@@ -123,7 +125,6 @@ const Home = () => {
         .then((data) => setLastUpdateTime(data.lastUpdate))
         .catch((error) => {
           console.error('Error fetching last update time:', error.message);
-          // Instead of alert, we'll handle this in the UI
           setLastUpdateTime('error'); // Use 'error' to indicate failure
         });
     } else {
@@ -148,7 +149,7 @@ const Home = () => {
       })
       .catch((error) => {
         console.error('Error fetching scorecard data:', error.message);
-        alert(`Error fetching scorecard data: ${error.message}`);
+        setErrorMessage(`Error fetching scorecard data: ${error.message}`);
       });
   };
 
@@ -190,11 +191,17 @@ const Home = () => {
             maxTop20,
           };
         })
-        .filter((player) => player.scoreToPar !== null) // Exclude players without scores
-        .sort((a, b) => a.scoreToPar - b.scoreToPar); // Sort by score (best to worst)
+        .sort((a, b) => {
+          // Sort by scoreToPar, but handle null values by placing them at the bottom
+          if (a.scoreToPar === null && b.scoreToPar === null) return 0;
+          if (a.scoreToPar === null) return 1;
+          if (b.scoreToPar === null) return -1;
+          return a.scoreToPar - b.scoreToPar;
+        });
 
-      // Take the top 4 lowest scores (or fewer if the team has fewer than 4 players)
+      // Take the top 4 lowest scores (or fewer if the team has fewer than 4 players with scores)
       const topFourScores = playersWithScores
+        .filter((player) => player.scoreToPar !== null) // Only include players with scores for the total
         .slice(0, 4) // Take the first 4 after sorting (lowest scores)
         .reduce((total, player) => total + player.scoreToPar, 0); // Sum the scores
 
@@ -223,23 +230,37 @@ const Home = () => {
 
   // Handle updating data via the backend
   const handleUpdateData = () => {
+    if (updateCooldown) {
+      setErrorMessage('Data has been updated within the last 5 minutes, please wait to update again.');
+      return;
+    }
+
     setIsUpdating(true);
+    setErrorMessage(null); // Clear any previous error messages
     fetch(`${API_BASE_URL}/update-data`, { method: 'POST' })
       .then((response) => {
         if (!response.ok) {
+          if (response.status === 429) {
+            throw new Error('Data has been updated within the last 5 minutes, please wait to update again.');
+          }
           throw new Error(`Failed to update data: ${response.status}`);
         }
         return response.json();
       })
       .then((data) => {
         setLastUpdateTime(data.lastUpdateTime);
-        alert('Data updated successfully!');
+        setErrorMessage('Data updated successfully!');
+        setUpdateCooldown(true);
+        setTimeout(() => setUpdateCooldown(false), 5 * 60 * 1000); // 5-minute cooldown
 
         // Refresh leaderboard data after update
         console.log('Fetching updated live stats from:', `${API_BASE_URL}/live-stats`);
         fetch(`${API_BASE_URL}/live-stats`)
           .then((response) => {
             if (!response.ok) {
+              if (response.status === 429) {
+                throw new Error('Data has been updated within the last 5 minutes, please wait to update again.');
+              }
               throw new Error(`Failed to fetch updated live stats: ${response.status}`);
             }
             return response.json();
@@ -256,7 +277,7 @@ const Home = () => {
           })
           .catch((error) => {
             console.error('Error fetching updated live tournament stats:', error.message);
-            alert(`Error fetching updated live stats: ${error.message}`);
+            setErrorMessage(error.message);
           });
 
         // Refresh predictions data after update
@@ -264,6 +285,9 @@ const Home = () => {
         fetch(`${API_BASE_URL}/preds`)
           .then((response) => {
             if (!response.ok) {
+              if (response.status === 429) {
+                throw new Error('Data has been updated within the last 5 minutes, please wait to update again.');
+              }
               throw new Error(`Failed to fetch updated predictions: ${response.status}`);
             }
             return response.json();
@@ -285,12 +309,12 @@ const Home = () => {
           })
           .catch((error) => {
             console.error('Error fetching updated predictions data:', error.message);
-            alert(`Error fetching updated predictions: ${error.message}`);
+            setErrorMessage(error.message);
           });
       })
       .catch((error) => {
         console.error('Error updating data:', error.message);
-        alert(`Error updating data: ${error.message}`);
+        setErrorMessage(error.message);
       })
       .finally(() => setIsUpdating(false));
   };
@@ -344,13 +368,15 @@ const Home = () => {
           <button
             className="btn btn-primary update-btn"
             onClick={handleUpdateData}
-            disabled={isUpdating}
+            disabled={isUpdating || updateCooldown}
           >
             {isUpdating ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                 Updating...
               </>
+            ) : updateCooldown ? (
+              'Waiting to Update...'
             ) : (
               'Update Data'
             )}
@@ -361,10 +387,20 @@ const Home = () => {
               {lastUpdateTime === 'error'
                 ? 'over 5 minutes old, feel free to update'
                 : lastUpdateTime
-                ? new Date(lastUpdateTime).toLocaleString()
+                ? new Date(lastUpdateTime).toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
                 : 'unknown'}
             </strong>
           </p>
+          {errorMessage && (
+            <div
+              className={`alert mt-2 ${
+                errorMessage.includes('successfully') ? 'alert-success' : 'alert-danger'
+              }`}
+              role="alert"
+            >
+              {errorMessage}
+            </div>
+          )}
         </div>
 
         {/* Leaderboard */}
@@ -416,7 +452,7 @@ const Home = () => {
                               >
                                 <td>{player.name}</td>
                                 <td className={player.scoreToPar < 0 ? 'text-danger' : player.scoreToPar > 0 ? 'text-success' : ''}>
-                                  {player.scoreToPar}
+                                  {player.scoreToPar !== null ? player.scoreToPar : 'N/A'}
                                 </td>
                                 <td>{player.thru}</td>
                                 <td style={{ backgroundColor: getBackgroundColor(player.win, player.maxWin) }}>
