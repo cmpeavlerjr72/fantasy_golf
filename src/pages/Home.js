@@ -385,7 +385,7 @@ const Home = () => {
             Last updated:{' '}
             <strong>
               {lastUpdateTime === 'error'
-                ? 'over 5 minutes old, feel free to update'
+                ? 'Unable to find latest Update Time'
                 : lastUpdateTime
                 ? new Date(lastUpdateTime).toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
                 : 'unknown'}
