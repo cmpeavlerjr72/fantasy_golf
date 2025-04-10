@@ -5,8 +5,7 @@ const Home = () => {
   const [teams, setTeams] = useState([]);
   const [teamNames, setTeamNames] = useState([]);
   const [leagueId, setLeagueId] = useState('');
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [predictions, setPredictions] = useState([]); // New state for predictions data
+  const [predictions, setPredictions] = useState([]); // State for predictions data (now includes scores and thru)
   const [selectedTeam, setSelectedTeam] = useState(null); // Track the expanded team
   const [selectedPlayer, setSelectedPlayer] = useState(null); // Track the selected player for scorecard
   const [lastUpdateTime, setLastUpdateTime] = useState(null); // Track the last update time
@@ -60,31 +59,7 @@ const Home = () => {
           setErrorMessage(`Error fetching league data: ${error.message}`);
         });
 
-      // Fetch live tournament stats
-      console.log('Fetching live stats from:', `${API_BASE_URL}/live-stats`);
-      fetch(`${API_BASE_URL}/live-stats`)
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch live stats: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          if (data.live_stats && Array.isArray(data.live_stats)) {
-            const normalizedLeaderboard = data.live_stats.map((player) => ({
-              name: normalizeName(player.player_name),
-              scoreToPar: parseFloat(player.total) || 0,
-              thru: player.thru || 'N/A', // Include the "thru" value
-            }));
-            setLeaderboard(normalizedLeaderboard);
-          }
-        })
-        .catch((error) => {
-          console.error('Error fetching live tournament stats:', error.message);
-          setErrorMessage(`Error fetching live stats: ${error.message}`);
-        });
-
-      // Fetch predictions data
+      // Fetch predictions data (now includes scores and thru)
       console.log('Fetching predictions data from:', `${API_BASE_URL}/preds`);
       fetch(`${API_BASE_URL}/preds`)
         .then((response) => {
@@ -98,6 +73,8 @@ const Home = () => {
           if (data.data && Array.isArray(data.data)) {
             const normalizedPredictions = data.data.map((player) => ({
               name: normalizeName(player.player_name),
+              scoreToPar: player.current_score !== null ? parseFloat(player.current_score) : null,
+              thru: player.thru !== null ? player.thru : 'N/A',
               win: player.win,
               top_5: player.top_5,
               top_10: player.top_10,
@@ -170,20 +147,17 @@ const Home = () => {
       const team = teams[index];
       const playersWithScores = team
         .map((player) => {
-          const playerStats = leaderboard.find(
-            (entry) => normalizeName(entry.name) === normalizeName(player.name)
-          );
-          const playerPreds = predictions.find(
+          const playerData = predictions.find(
             (pred) => normalizeName(pred.name) === normalizeName(player.name)
           );
           return {
             ...player,
-            scoreToPar: playerStats ? playerStats.scoreToPar : null,
-            thru: playerStats ? playerStats.thru : 'N/A',
-            win: playerPreds ? playerPreds.win : null,
-            top_5: playerPreds ? playerPreds.top_5 : null,
-            top_10: playerPreds ? playerPreds.top_10 : null,
-            top_20: playerPreds ? playerPreds.top_20 : null,
+            scoreToPar: playerData ? playerData.scoreToPar : null,
+            thru: playerData ? playerData.thru : 'N/A',
+            win: playerData ? playerData.win : null,
+            top_5: playerData ? playerData.top_5 : null,
+            top_10: playerData ? playerData.top_10 : null,
+            top_20: playerData ? playerData.top_20 : null,
             // Store the maximum values for use in shading
             maxWin,
             maxTop5,
@@ -253,34 +227,7 @@ const Home = () => {
         setUpdateCooldown(true);
         setTimeout(() => setUpdateCooldown(false), 5 * 60 * 1000); // 5-minute cooldown
 
-        // Refresh leaderboard data after update
-        console.log('Fetching updated live stats from:', `${API_BASE_URL}/live-stats`);
-        fetch(`${API_BASE_URL}/live-stats`)
-          .then((response) => {
-            if (!response.ok) {
-              if (response.status === 429) {
-                throw new Error('Data has been updated within the last 5 minutes, please wait to update again.');
-              }
-              throw new Error(`Failed to fetch updated live stats: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then((data) => {
-            if (data.live_stats && Array.isArray(data.live_stats)) {
-              const normalizedLeaderboard = data.live_stats.map((player) => ({
-                name: normalizeName(player.player_name),
-                scoreToPar: parseFloat(player.total) || 0,
-                thru: player.thru || 'N/A', // Include the "thru" value
-              }));
-              setLeaderboard(normalizedLeaderboard);
-            }
-          })
-          .catch((error) => {
-            console.error('Error fetching updated live tournament stats:', error.message);
-            setErrorMessage(error.message);
-          });
-
-        // Refresh predictions data after update
+        // Refresh predictions data after update (now includes scores and thru)
         console.log('Fetching updated predictions data from:', `${API_BASE_URL}/preds`);
         fetch(`${API_BASE_URL}/preds`)
           .then((response) => {
@@ -297,6 +244,8 @@ const Home = () => {
             if (data.data && Array.isArray(data.data)) {
               const normalizedPredictions = data.data.map((player) => ({
                 name: normalizeName(player.player_name),
+                scoreToPar: player.current_score !== null ? parseFloat(player.current_score) : null,
+                thru: player.thru !== null ? player.thru : 'N/A',
                 win: player.win,
                 top_5: player.top_5,
                 top_10: player.top_10,
@@ -385,7 +334,7 @@ const Home = () => {
             Last updated:{' '}
             <strong>
               {lastUpdateTime === 'error'
-                ? 'Unable to find latest Update Time'
+                ? 'over 5 minutes old, feel free to update'
                 : lastUpdateTime
                 ? new Date(lastUpdateTime).toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
                 : 'unknown'}
